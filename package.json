@@ -1,0 +1,57 @@
+{
+    "name": "rwa-hackathon-2024",
+    "version": "1.0.0",
+    "description": "Hedera Hackathon 2024 RWAs",
+    "author": "Matthew DeLorenzo",
+    "license": "ISC",
+    "dependencies": {
+        "@hashgraph/sdk": "2.42.0",
+        "@openzeppelin/contracts": "^5.0.2",
+        "axios": "^1.6.7",
+        "bignumber.js": "^9.0.2",
+        "dotenv": "^8.6.0",
+        "hardhat-watcher": "^2.1.1",
+        "minimist": "^1.2.8",
+        "ts-node": "^8.10.2",
+        "tslib": "^2.4.0",
+        "typescript": "^3.7.3"
+    },
+    "devDependencies": {
+        "@hashgraph/hardhat-hethers": "^1.0.4",
+        "@hashgraph/hethers": "^1.2.6",
+        "@nomiclabs/hardhat-ethers": "^2.0.2",
+        "@nomiclabs/hardhat-etherscan": "^2.1.8",
+        "@nomiclabs/hardhat-waffle": "^2.0.1",
+        "@typechain/ethers-v5": "^4.0.0",
+        "@types/chai": "^4.2.6",
+        "@types/chai-as-promised": "^7.1.5",
+        "@types/mocha": "^5.2.7",
+        "@types/sinon": "^10.0.16",
+        "chai": "^4.3.6",
+        "chai-as-promised": "^7.1.1",
+        "ethereum-waffle": "^3.0.2",
+        "hardhat": "^2.22.6",
+        "hardhat-typechain": "^0.3.5",
+        "mocha": "^6.2.2",
+        "sinon": "^15.2.0",
+        "typechain": "^4.0.0"
+    },
+    "overrides": {
+        "@hashgraph/hethers": {
+            "@hashgraph/sdk": "2.24.2"
+        },
+        "@hethers/providers": {
+            "@hashgraph/sdk": "2.24.2"
+        },
+        "@hethers/transactions": {
+            "@hashgraph/sdk": "2.24.2"
+        },
+        "@hethers/wallet": {
+            "@hashgraph/sdk": "2.24.2"
+        }
+    },
+    "scripts": {
+        "compile": "hardhat compile",
+        "test": "hardhat test"
+    }
+}
