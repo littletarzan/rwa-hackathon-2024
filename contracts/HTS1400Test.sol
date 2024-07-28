@@ -77,6 +77,7 @@ contract HTS1400 is IHTS1400, Ownable, HederaTokenService {
     constructor(
         string memory _tokenName,
         string memory _tokenSymbol,
+        string memory _tokenMemo,
         int64 _initSupply,
         int32 _decimals,
         address _initOwner,
@@ -100,6 +101,7 @@ contract HTS1400 is IHTS1400, Ownable, HederaTokenService {
         IHederaTokenService.HederaToken memory myToken;
         myToken.name = _tokenName;
         myToken.symbol = _tokenSymbol;
+        myToken.memo = _tokenMemo;
         myToken.treasury = address(this);
         myToken.expiry = expiry;
         myToken.tokenKeys = keys;
@@ -165,6 +167,9 @@ contract HTS1400 is IHTS1400, Ownable, HederaTokenService {
         require(_to != address(0), "0x address not allowed");
         uint256 _fromIndex = partitionToIndex[_from][_partition] - 1;
         
+        // unfreeze the token
+        unfreezeToken(token, _from);
+
         // transfer from `_from` to `_to`
         transferToken(token, _from, _to, _value.toInt64());
 
@@ -180,6 +185,8 @@ contract HTS1400 is IHTS1400, Ownable, HederaTokenService {
         partitions[_to][_toIndex].amount = partitions[_to][_toIndex].amount.add(_value);
         // balances[_to] = balances[_to].add(_value); HTS keeps track of updated user balance
 
+        // freeze the token
+        freezeToken(token, _from);
         // Emit transfer event.
         emit TransferByPartition(_partition, _operator, _from, _to, _value, _data, _operatorData);
     }
