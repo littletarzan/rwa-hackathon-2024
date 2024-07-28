@@ -36,13 +36,14 @@ interface IHTS1644 {
      * `balanceOf(_tokenHolder)` tokens) and potentially also need to respect other transfer restrictions.
      * @dev This function can only be executed by the `controller` address.
      * @param _tokenHolder The account whose tokens will be redeemed.
+     * @param _partition The partition from which to redeem
      * @param _value uint256 the amount of tokens need to be redeemed.
      * @param _data data to validate the transfer. (It is not used in this reference implementation
      * because use of `_data` parameter is implementation specific).
      * @param _operatorData data attached to the transfer by controller to emit in event. (It is more like a reason string 
      * for calling this function (aka force transfer) which provides the transparency on-chain). 
      */
-    function controllerRedeem(address _tokenHolder, uint256 _value, bytes calldata _data, bytes calldata _operatorData) external;
+    function controllerRedeem(address _tokenHolder, bytes32 _partition, uint256 _value, bytes calldata _data, bytes calldata _operatorData) external;
 
     // Controller Events
     event ControllerTransfer(

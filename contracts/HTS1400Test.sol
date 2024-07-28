@@ -161,7 +161,7 @@ contract HTS1400 is IHTS1400, Ownable, HederaTokenService {
         return (0x51, "Success", _partition);
     }
 
-    function _transferByPartition(address _from, address _to, uint256 _value, bytes32 _partition, bytes calldata _data, address _operator, bytes calldata _operatorData) internal {
+    function _transferByPartition(address _from, address _to, uint256 _value, bytes32 _partition, bytes memory _data, address _operator, bytes memory _operatorData) internal {
         require(_validPartition(_partition, _from), "Invalid partition"); 
         require(partitions[_from][partitionToIndex[_from][_partition] - 1].amount >= _value, "Insufficient balance");
         require(_to != address(0), "0x address not allowed");
@@ -299,7 +299,7 @@ contract HTS1400 is IHTS1400, Ownable, HederaTokenService {
     }
 
     // bugged
-    function _redeemByPartition(bytes32 _partition, address _from, address _operator, uint256 _value, bytes calldata _data, bytes calldata _operatorData) internal {
+    function _redeemByPartition(bytes32 _partition, address _from, address _operator, uint256 _value, bytes memory _data, bytes memory _operatorData) internal {
         // Add the function to validate the `_data` parameter
         _validateParams(_partition, _value);
         require(_validPartition(_partition, _from), "Invalid partition");
@@ -442,7 +442,7 @@ contract HTS1400 is IHTS1400, Ownable, HederaTokenService {
         return _isControllable();
     }
 
-    function controllerTransfer(address _from, bytes32 _partition, address _to, uint256 _value, bytes calldata _data, bytes calldata _operatorData) external onlyController {
+    function controllerTransfer(address _from, address _to, bytes32 _partition, uint256 _value, bytes calldata _data, bytes calldata _operatorData) external onlyController {
         // copy/paste of internal function _transferByPartition but with nuance of HTS token wipe
         require(_validPartition(_partition, _from), "Invalid partition"); 
         require(partitions[_from][partitionToIndex[_from][_partition] - 1].amount >= _value, "Insufficient balance");
