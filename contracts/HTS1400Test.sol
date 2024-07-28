@@ -65,6 +65,7 @@ contract HTS1400 is IHTS1400, Ownable, HederaTokenService {
 
     // ------------- ERC1644 state variables -------------
     // Address of the controller which is a delegated entity
+    // Roles: document control, authority to remove/transfer tokens without consent, issue
     // set by the issuer/owner of the token
     address public controller;
 
@@ -73,6 +74,8 @@ contract HTS1400 is IHTS1400, Ownable, HederaTokenService {
 
     // ------------- Hedera Security Token Address -------------
     address immutable public token;
+
+    // note: owner roles: update token keys, kyc users
 
     constructor(
         string memory _tokenName,
@@ -115,6 +118,7 @@ contract HTS1400 is IHTS1400, Ownable, HederaTokenService {
         }
 
         token = _token; 
+        controller = _controller;
         _defaultPartition =_defaultPartition_;
     }
 
@@ -255,7 +259,7 @@ contract HTS1400 is IHTS1400, Ownable, HederaTokenService {
     }
 
     // ERC1410 Issue and Redemption
-    function issueByPartition(bytes32 _partition, address _tokenHolder, uint256 _value, bytes calldata _data) external onlyOwner {
+    function issueByPartition(bytes32 _partition, address _tokenHolder, uint256 _value, bytes calldata _data) external onlyController {
         // Add the function to validate the `_data` parameter
         _issueByPartition(_partition, _tokenHolder, _value, _data);
     }
@@ -326,7 +330,7 @@ contract HTS1400 is IHTS1400, Ownable, HederaTokenService {
             partitionToIndex[_holder][partitions[_holder][index].partition] = index + 1;
         }
         delete partitionToIndex[_holder][_partition];
-        partitions[_holder].length--;
+        // partitions[_holder].length--;
     }
 
     function _validateParams(bytes32 _partition, uint256 _value) internal pure {
@@ -350,13 +354,12 @@ contract HTS1400 is IHTS1400, Ownable, HederaTokenService {
         return issuance;
     }
 
-    function issue(address _tokenHolder, uint256 _value, bytes calldata _data) external onlyOwner { // TODO: Controller or minter role instead?
+    function issue(address _tokenHolder, uint256 _value, bytes calldata _data) external onlyController() {
         // Add a function to validate the `_data` parameter
         require(issuance, "Issuance is closed");
         _issueByPartition(_defaultPartition, _tokenHolder, _value, _data);
         emit Issued(msg.sender, _tokenHolder, _value, _data);
     }
-
 
     function redeem(uint256 _value, bytes calldata _data) external {
         // Add a function to validate the `_data` parameter
@@ -402,7 +405,7 @@ contract HTS1400 is IHTS1400, Ownable, HederaTokenService {
     }
 
     // ERC1643
-        function setDocument(bytes32 _name, string memory _uri, bytes32 _documentHash) external onlyOwner {
+        function setDocument(bytes32 _name, string memory _uri, bytes32 _documentHash) external onlyController {
         require(_name != bytes32(0), "Zero value is not allowed");
         require(bytes(_uri).length > 0, "Should not be a empty uri");
         if (_documents[_name].lastModified == uint256(0)) {
@@ -413,14 +416,14 @@ contract HTS1400 is IHTS1400, Ownable, HederaTokenService {
         emit DocumentUpdated(_name, _uri, _documentHash);
     }
 
-    function removeDocument(bytes32 _name) external onlyOwner {
+    function removeDocument(bytes32 _name) external onlyController {
         require(_documents[_name].lastModified != uint256(0), "Document should be existed");
         uint256 index = _docIndexes[_name] - 1;
         if (index != _docNames.length - 1) {
             _docNames[index] = _docNames[_docNames.length - 1];
             _docIndexes[_docNames[index]] = index + 1; 
         }
-        _docNames.length--;
+        // _docNames.length--;
         emit DocumentRemoved(_name, _documents[_name].uri, _documents[_name].docHash);
         delete _documents[_name];
     }
@@ -489,7 +492,7 @@ contract HTS1400 is IHTS1400, Ownable, HederaTokenService {
         emit ControllerRedemption(msg.sender, _from, _value, _data, _operatorData);
     }
 
-    function finalizeControllable() external onlyOwner() {
+    function finalizeControllable() external onlyController() {
         require(controller != address(0), "Already finalized");
         controller = address(0);
         emit FinalizedControllerFeature();
@@ -543,4 +546,23 @@ contract HTS1400 is IHTS1400, Ownable, HederaTokenService {
         _transferByPartition(_from, _to, _value, _defaultPartition, new bytes(0), msg.sender, new bytes(0));
         return true;
     }
+
+    // ------------- Owner functions -------------
+
+    function ownerGrantTokenKyc(address account) external onlyOwner returns (int64) {
+        return grantTokenKyc(token, account);
+    }
+
+    function ownerRevokeTokenKyc(address account) external onlyOwner returns (int64) {
+        return revokeTokenKyc(token, account);
+    }
+
+    function ownerPauseToken() external onlyOwner() returns(int64 respCode) {
+        return pauseToken(token);
+    }
+
+    function ownerUpdateTokenKeys(IHederaTokenService.TokenKey[] memory keys) external onlyOwner() returns(int64 respCode) {
+        return updateTokenKeys(token, keys);
+    }
+
 }
