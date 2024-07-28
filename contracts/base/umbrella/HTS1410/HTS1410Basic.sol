@@ -48,24 +48,16 @@ contract HTS1410Basic is TokenState {
     {
 
     }
-    /**
-     * @dev Uses HTS precompile to get number of tokens in existence
-     */
+
     function totalSupply() external view returns (uint256) {
         return IERC20(token).totalSupply();
     }
 
-    /// @notice Uses HTS precompile to get balance of `_tokenHolder`
-    /// @param _tokenHolder An address for whom to query the balance
-    /// @return The number of tokens owned by `_tokenHolder`, possibly zero
     function balanceOf(address _tokenHolder) external view returns (uint256) {
         return IERC20(token).balanceOf(_tokenHolder);
     }
 
-    /// @notice Counts the balance associated with a specific partition assigned to an tokenHolder
-    /// @param _partition The partition for which to query the balance
-    /// @param _tokenHolder An address for whom to query the balance
-    /// @return The number of tokens owned by `_tokenHolder` with the metadata associated with `_partition`, possibly zero
+    
     function balanceOfByPartition(bytes32 _partition, address _tokenHolder) external view returns (uint256) {
         if (_validPartition(_partition, _tokenHolder))
             return partitions[_tokenHolder][partitionToIndex[_tokenHolder][_partition] - 1].amount;
@@ -73,9 +65,6 @@ contract HTS1410Basic is TokenState {
             return 0;
     }
 
-    /// @notice Use to get the list of partitions `_tokenHolder` is associated with
-    /// @param _tokenHolder An address corresponds whom partition list is queried
-    /// @return List of partitions
     function partitionsOf(address _tokenHolder) external view returns (bytes32[] memory) {
         bytes32[] memory partitionsList = new bytes32[](partitions[_tokenHolder].length);
         for (uint256 i = 0; i < partitions[_tokenHolder].length; i++) {
@@ -84,12 +73,6 @@ contract HTS1410Basic is TokenState {
         return partitionsList;
     }
 
-    /// @notice Transfers the ownership of tokens from a specified partition from one address to another address
-    /// @param _partition The partition from which to transfer tokens
-    /// @param _to The address to which to transfer tokens to
-    /// @param _value The amount of tokens to transfer from `_partition`
-    /// @param _data Additional data attached to the transfer of tokens
-    /// @return The partition to which the transferred tokens were allocated for the _to address
     function transferByPartition(bytes32 _partition, address _to, uint256 _value, bytes memory _data) external returns (bytes32) {
         // Add a function to verify the `_data` parameter
         // TODO: Need to create the bytes division of the `_partition` so it can be easily findout in which receiver's partition
@@ -101,16 +84,6 @@ contract HTS1410Basic is TokenState {
         _transferByPartition(msg.sender, _to, _value, _partition, _data, address(0), "");
     }
 
-    /// @notice The standard provides an on-chain function to determine whether a transfer will succeed,
-    /// and return details indicating the reason if the transfer is not valid.
-    /// @param _from The address from whom the tokens get transferred.
-    /// @param _to The address to which to transfer tokens to.
-    /// @param _partition The partition from which to transfer tokens
-    /// @param _value The amount of tokens to transfer from `_partition`
-    /// @param _data Additional data attached to the transfer of tokens
-    /// @return ESC (Ethereum Status Code) following the EIP-1066 standard
-    /// @return Application specific reason codes with additional details
-    /// @return The partition to which the transferred tokens were allocated for the _to address
     function canTransferByPartition(address _from, address _to, bytes32 _partition, uint256 _value, bytes memory _data) external view returns (bytes1, bytes32, bytes32) {
         // TODO: Applied the check over the `_data` parameter
         if (!_validPartition(_partition, _from))

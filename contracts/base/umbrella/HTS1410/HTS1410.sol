@@ -6,11 +6,7 @@ import "../../../interfaces/IHTS1410.sol";
 
 contract HTS1410Standard is IHTS1410, HTS1410Operator {
 
-    /// @notice Increases totalSupply and the corresponding amount of the specified owners partition
-    /// @param _partition The partition to allocate the increase in balance
-    /// @param _tokenHolder The token holder whose balance should be increased
-    /// @param _value The amount by which to increase the balance
-    /// @param _data Additional data attached to the minting of tokens
+
     function issueByPartition(bytes32 _partition, address _tokenHolder, uint256 _value, bytes memory _data) external onlyOwner {
         // Add the function to validate the `_data` parameter
         _validateParams(_partition, _value);
@@ -34,23 +30,13 @@ contract HTS1410Standard is IHTS1410, HTS1410Operator {
         emit IssuedByPartition(_partition, _tokenHolder, _value, _data);
     }
 
-    /// @notice Decreases totalSupply and the corresponding amount of the specified partition of msg.sender
-    /// @param _partition The partition to allocate the decrease in balance
-    /// @param _value The amount by which to decrease the balance
-    /// @param _data Additional data attached to the burning of tokens
+
     function redeemByPartition(bytes32 _partition, uint256 _value, bytes memory _data) external {
         // Add the function to validate the `_data` parameter
         _redeemByPartition(_partition, msg.sender, address(0), _value, _data, "");
     }
 
-    /// @notice Decreases totalSupply and the corresponding amount of the specified partition of tokenHolder
-    /// @dev This function can only be called by the authorised operator.
-    /// @param _partition The partition to allocate the decrease in balance.
-    /// @param _tokenHolder The token holder whose balance should be decreased
-    /// @param _value The amount by which to decrease the balance
-    /// @param _data Additional data attached to the burning of tokens
-    /// @param _operatorData Additional data attached to the transfer of tokens by the operator
-    function operatorRedeemByPartition(bytes32 _partition, address _tokenHolder, uint256 _value, bytes memory _data, bytes memory _operatorData) external {
+    function operatorRedeemByPartition(bytes32 _partition, address _tokenHolder, uint256 _value, bytes memory _operatorData) external {
         // Add the function to validate the `_data` parameter
         // TODO: Add a functionality of verifying the `_operatorData`
         require(_tokenHolder != address(0), "Invalid from address");
