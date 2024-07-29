@@ -53,7 +53,7 @@ contract HTS1400 is IHTS1400, Ownable, HederaTokenService {
     struct Document {
         bytes32 docHash; // Hash of the document
         uint256 lastModified; // Timestamp at which document details was last modified
-        string uri; // URI of the document that exist off-chain
+        string uri; // URI of the document that exist off-chain TODO: use address of hedera file service location
     }
 
     // mapping to store the documents details in the document
@@ -260,16 +260,19 @@ contract HTS1400 is IHTS1400, Ownable, HederaTokenService {
     }
 
     // ERC1410 Issue and Redemption
+     /// @inheritdoc IHTS1410
     function issueByPartition(bytes32 _partition, address _tokenHolder, uint256 _value, bytes calldata _data) external onlyController {
         // Add the function to validate the `_data` parameter
         _issueByPartition(_partition, _tokenHolder, _value, _data);
     }
 
+    /// @inheritdoc IHTS1410
     function redeemByPartition(bytes32 _partition, uint256 _value, bytes calldata _data) external {
         // Add the function to validate the `_data` parameter
         _redeemByPartition(_partition, msg.sender, address(0), _value, _data, "");
     }
 
+    /// @inheritdoc IHTS1410
     function operatorRedeemByPartition(bytes32 _partition, address _tokenHolder, uint256 _value, bytes calldata _data, bytes calldata _operatorData) external {
         // Add the function to validate the `_data` parameter
         // TODO: Add a functionality of verifying the `_operatorData`
@@ -289,7 +292,7 @@ contract HTS1400 is IHTS1400, Ownable, HederaTokenService {
         mintToken(token, _value.toInt64(), new bytes[](0));
         transferToken(token, address(this), _tokenHolder, _value.toInt64());
 
-        //assign tokens to the specified partition
+        // assign tokens to the specified partition
         uint256 index = partitionToIndex[_tokenHolder][_partition];
         if (index == 0) {
             partitions[_tokenHolder].push(Partition(_value, _partition));
@@ -303,7 +306,6 @@ contract HTS1400 is IHTS1400, Ownable, HederaTokenService {
         emit IssuedByPartition(_partition, _tokenHolder, _value, _data);
     }
 
-    // bugged
     function _redeemByPartition(bytes32 _partition, address _from, address _operator, uint256 _value, bytes memory _data, bytes memory _operatorData) internal {
         // Add the function to validate the `_data` parameter
         _validateParams(_partition, _value);
@@ -311,6 +313,7 @@ contract HTS1400 is IHTS1400, Ownable, HederaTokenService {
         uint256 index = partitionToIndex[_from][_partition] - 1;
         require(partitions[_from][index].amount >= _value, "Insufficient value");
 
+        unfreezeToken(token, _from);
         // transfer tokens to redeem from _from and burn
         transferToken(token, _from, address(this), _value.toInt64());
         burnToken(token, _value.toInt64(), new int64[](0));
@@ -320,6 +323,8 @@ contract HTS1400 is IHTS1400, Ownable, HederaTokenService {
         } else {
             partitions[_from][index].amount = partitions[_from][index].amount.sub(_value);
         }
+
+        freezeToken(token, _from);
         // balances[_from] = balances[_from].sub(_value); // HTS keeps track
         // _totalSupply = _totalSupply.sub(_value); // HTS keeps track
         emit RedeemedByPartition(_partition, _operator, _from, _value, _data);
@@ -341,20 +346,24 @@ contract HTS1400 is IHTS1400, Ownable, HederaTokenService {
 
     // ERC1594
 
+    /// @inheritdoc IHTS1594
     function transferWithData(address _to, uint256 _value, bytes calldata _data) external {
         // Add a function to validate the `_data` parameter
         _transferByPartition(msg.sender, _to, _value, _defaultPartition, _data, msg.sender, new bytes(0));
     }
 
+    /// @inheritdoc IHTS1594
     function transferFromWithData(address _from, address _to, uint256 _value, bytes calldata _data) external {
         // Add a function to validate the `_data` parameter
         _transferByPartition(msg.sender, _to, _value, _defaultPartition, _data, msg.sender, new bytes(0));
     }
 
+    /// @inheritdoc IHTS1594
     function isIssuable() external view returns (bool) {
         return issuance;
     }
 
+    /// @inheritdoc IHTS1594
     function issue(address _tokenHolder, uint256 _value, bytes calldata _data) external onlyController() {
         // Add a function to validate the `_data` parameter
         require(issuance, "Issuance is closed");
@@ -362,19 +371,24 @@ contract HTS1400 is IHTS1400, Ownable, HederaTokenService {
         emit Issued(msg.sender, _tokenHolder, _value, _data);
     }
 
+    /// @inheritdoc IHTS1594
     function redeem(uint256 _value, bytes calldata _data) external {
         // Add a function to validate the `_data` parameter
         _redeemByPartition(_defaultPartition, msg.sender, msg.sender, _value, _data, new bytes(0));
         emit Redeemed(address(0), msg.sender, _value, _data);
     }
 
+    /// @inheritdoc IHTS1594
     function redeemFrom(address _tokenHolder, uint256 _value, bytes calldata _data) external {
         // Add a function to validate the `_data` parameter
-        _redeemByPartition(_defaultPartition, msg.sender, msg.sender, _value, _data, new bytes(0));
+        // msg.sender must be operator or operator of default partition of _from
+        require( isOperator(msg.sender, _tokenHolder) || 
+            isOperatorForPartition(_defaultPartition, msg.sender, _tokenHolder), "53"); // 0x53	insufficient allowance
+        _redeemByPartition(_defaultPartition, _tokenHolder, msg.sender, _value, _data, new bytes(0));
         emit Redeemed(msg.sender, _tokenHolder, _value, _data);
     }
 
-
+    /// @inheritdoc IHTS1594
     function canTransfer(address _to, uint256 _value, bytes calldata _data) external view returns (bool, bytes1, bytes32) {
         // Add a function to validate the `_data` parameter
         if (IERC20(token).balanceOf(msg.sender) < _value)
@@ -388,7 +402,7 @@ contract HTS1400 is IHTS1400, Ownable, HederaTokenService {
         return (true, 0x51, bytes32(0));
     }
 
-
+    /// @inheritdoc IHTS1594
     function canTransferFrom(address _from, address _to, uint256 _value, bytes calldata _data) external view returns (bool, bytes1, bytes32) {
         // Add a function to validate the `_data` parameter
         if (_value > IERC20(token).allowance(_from, msg.sender)) // if (_value > _allowed[_from][msg.sender])
@@ -406,7 +420,8 @@ contract HTS1400 is IHTS1400, Ownable, HederaTokenService {
     }
 
     // ERC1643
-        function setDocument(bytes32 _name, string memory _uri, bytes32 _documentHash) external onlyController {
+    /// @inheritdoc IHTS1643
+    function setDocument(bytes32 _name, string memory _uri, bytes32 _documentHash) external onlyController {
         require(_name != bytes32(0), "Zero value is not allowed");
         require(bytes(_uri).length > 0, "Should not be a empty uri");
         if (_documents[_name].lastModified == uint256(0)) {
@@ -417,6 +432,7 @@ contract HTS1400 is IHTS1400, Ownable, HederaTokenService {
         emit DocumentUpdated(_name, _uri, _documentHash);
     }
 
+    /// @inheritdoc IHTS1643
     function removeDocument(bytes32 _name) external onlyController {
         require(_documents[_name].lastModified != uint256(0), "Document should be existed");
         uint256 index = _docIndexes[_name] - 1;
@@ -429,6 +445,7 @@ contract HTS1400 is IHTS1400, Ownable, HederaTokenService {
         delete _documents[_name];
     }
 
+    /// @inheritdoc IHTS1643
     function getDocument(bytes32 _name) external view returns (string memory, bytes32, uint256) {
         return (
             _documents[_name].uri,
@@ -437,15 +454,18 @@ contract HTS1400 is IHTS1400, Ownable, HederaTokenService {
         );
     }
 
+    /// @inheritdoc IHTS1643
     function getAllDocuments() external view returns (bytes32[] memory) {
         return _docNames;
     }
 
     // ERC1644
+    /// @inheritdoc IHTS1644
     function isControllable() external view returns (bool) {
         return _isControllable();
     }
 
+    /// @inheritdoc IHTS1644
     function controllerTransfer(address _from, address _to, bytes32 _partition, uint256 _value, bytes calldata _data, bytes calldata _operatorData) external onlyController {
         // copy/paste of internal function _transferByPartition but with nuance of HTS token wipe
         require(_validPartition(_partition, _from), "Invalid partition"); 
@@ -472,6 +492,7 @@ contract HTS1400 is IHTS1400, Ownable, HederaTokenService {
         emit ControllerTransfer(msg.sender, _from, _to, _partition, _value, _data, _operatorData);
     }
 
+    /// @inheritdoc IHTS1644
     function controllerRedeem(address _from, bytes32 _partition, uint256 _value, bytes calldata _data, bytes calldata _operatorData) external onlyController {
         _validateParams(_partition, _value);
         require(_validPartition(_partition, _from), "Invalid partition");
@@ -505,6 +526,7 @@ contract HTS1400 is IHTS1400, Ownable, HederaTokenService {
         else
             return true;
     }
+
     // ------------- Modifiers -------------
 
     modifier onlyController() {
@@ -556,11 +578,15 @@ contract HTS1400 is IHTS1400, Ownable, HederaTokenService {
         return revokeTokenKyc(token, account);
     }
 
-    function ownerPauseToken() external onlyOwner() returns(int64 respCode) {
+    function ownerPauseToken() external onlyOwner() returns(int64) {
         return pauseToken(token);
     }
 
-    function ownerUpdateTokenKeys(IHederaTokenService.TokenKey[] memory keys) external onlyOwner() returns(int64 respCode) {
+    function ownerUnpauseToken() external onlyOwner() returns(int64) {
+        return unpauseToken(token);
+    }
+
+    function ownerUpdateTokenKeys(IHederaTokenService.TokenKey[] memory keys) external onlyOwner() returns(int64) {
         return updateTokenKeys(token, keys);
     }
 

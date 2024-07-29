@@ -14,7 +14,9 @@ interface IHTS1400 is IHTS1410, IHTS1594, IHTS1643, IHTS1644, IERC20 {
 
     function ownerRevokeTokenKyc(address account) external returns (int64);
 
-    function ownerPauseToken() external returns(int64 respCode);
+    function ownerPauseToken() external returns(int64);
+
+    function ownerUnpauseToken() external returns(int64);
 
     function ownerUpdateTokenKeys(IHederaTokenService.TokenKey[] memory keys) external returns(int64);
 
