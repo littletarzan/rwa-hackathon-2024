@@ -146,8 +146,9 @@ contract HTS1400 is IHTS1400, Ownable, HederaTokenService {
         // as well as it also pass the `_validPartition()` check. In this particular case we are also assuming that reciever has the
         // some tokens of the same partition as well (To avoid the array index out of bound error).
         // Note- There is no operator used for the execution of this call so `_operator` value in
-        // in event is address(0) same for the `_operatorData`
-        _transferByPartition(msg.sender, _to, _value, _partition, _data, address(0), "");
+        // in event is msg.sender same for the `_operatorData`
+        _transferByPartition(msg.sender, _to, _value, _partition, _data, msg.sender, "");
+        return _partition; // ?
     }
 
     function canTransferByPartition(address _from, address _to, bytes32 _partition, uint256 _value, bytes calldata _data) external view returns (bytes1, bytes32, bytes32) {
@@ -513,9 +514,6 @@ contract HTS1400 is IHTS1400, Ownable, HederaTokenService {
 
     // ------------- ERC20 Overrides -------------
 
-    // event Transfer(address indexed from, address indexed to, uint256 value);
-    // event Approval(address indexed owner, address indexed spender, uint256 value);
-
     function totalSupply() external view override returns (uint256) {
         return IERC20(token).totalSupply();
     }
@@ -538,8 +536,9 @@ contract HTS1400 is IHTS1400, Ownable, HederaTokenService {
     }
 
     function transferFrom(address _from, address _to, uint256 _value) external override returns (bool) {
+        // must explicitly check operator mapping otherwise the allowance is vulnerable to third party transfer
         // TODO: revisit operator/controller/owner check
-        // require( _isOperator(msg.sender, _from), "53"); // 0x53	insufficient allowance
+        require( isOperator(msg.sender, _from) || isOperatorForPartition(_defaultPartition, msg.sender, _from), "53"); // 0x53	insufficient allowance
 
         // HTS checks for allowance
 
@@ -565,4 +564,8 @@ contract HTS1400 is IHTS1400, Ownable, HederaTokenService {
         return updateTokenKeys(token, keys);
     }
 
+    function withdrawHbar(uint256 _amount) external onlyOwner() {
+        (bool success, ) = payable(owner()).call{value: _amount}("");
+        require(success, 'withdrawHbar failed');
+    }
 }
