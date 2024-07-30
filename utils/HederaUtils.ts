@@ -5,6 +5,10 @@ import {
     Client,
     TransferTransaction,
     AccountAllowanceApproveTransaction,
+    TokenDissociateTransaction,
+    AccountCreateTransaction,
+    PrivateKey,
+    KeyList,
 } from "@hashgraph/sdk";
 import BigNumber, { BigNumber as BigNumberJs } from 'bignumber.js'
 import Long from "long";
@@ -19,6 +23,15 @@ import Long from "long";
 
     export async function associateToken(tokens: TokenId[], accountId: AccountId, clientToUse: Client) {
         const associate = await new TokenAssociateTransaction()
+            .setTokenIds(tokens)
+            .setAccountId(accountId)
+            .execute(clientToUse);
+
+        return await associate.getReceipt(clientToUse);
+    }
+
+    export async function dissociateToken(tokens: TokenId[], accountId: AccountId, clientToUse: Client) {
+        const associate = await new TokenDissociateTransaction()
             .setTokenIds(tokens)
             .setAccountId(accountId)
             .execute(clientToUse);

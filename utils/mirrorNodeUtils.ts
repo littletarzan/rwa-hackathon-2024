@@ -1,4 +1,5 @@
 import axios from 'axios';
+import hardhat from 'hardhat'
 
 function getMirrorNodeURL(environment: String) {
     switch (environment) {
@@ -28,30 +29,7 @@ export function getMirrorNodeIPAddress(environment: string) {
     }
 }
 
-export async function getMirrorNodeMessagesWithParams(topicId: string, order: string, timestamp: string, network: string, limit: string = `100`) {
-    // e.g. 'https://mainnet-public.mirrornode.hedera.com/api/v1/topics/0.0.2/messages?limit=100&order=desc&timestamp=gte%3A961926245'
-
-    let url = getMirrorNodeURL(network)
-    let endpoint = `${url}api/v1/topics/${topicId}/messages?`;
-    
-    endpoint += 'limit=' + limit + '&'
-    endpoint += 'order=' + order + '&'
-    endpoint += 'timestamp=gte%3A' + timestamp
-    let data;
-    try {
-        data = await axios.get(endpoint)
-    } catch (error) {
-        console.log('error fetching token info')
-        return null;
-    }
-    if(!data || !data.data ) {
-        return null;
-    }
-    return data.data;
-
-}
-
-export async function getTokenInfo(tokenId: string, network: string) {
+export async function getTokenInfo(tokenId: string, network: string = hardhat.network.name) {
     let url = getMirrorNodeURL(network)
     let endpoint = `${url}api/v1/tokens/${tokenId}`;
 
@@ -69,27 +47,7 @@ export async function getTokenInfo(tokenId: string, network: string) {
     return data.data;
 }
 
-export async function getTokenTotalSupplyAtTimestamp(tokenId: string, timestamp: string, network: string) {
-    let url = getMirrorNodeURL(network)
-    let endpoint = `${url}api/v1/tokens/${tokenId}`;
-
-        // https://mainnet-public.mirrornode.hedera.com/api/v1/tokens/0.0.1460200?timestamp=1234567890 
-
-    endpoint += '?timestamp=' + timestamp
-    let data;
-    try {
-        data = await axios.get(endpoint)
-    } catch (error) {
-        console.log('GTTSAT: error fetching token info')
-        return null;
-    }
-    if(!data || !data.data ) {
-        return null;
-    }
-    return data.data
-}
-
-export async function getTokenBalanceWithParams(tokenId: string, accountId: string, timestamp: string, network: string) {
+export async function getTokenBalanceWithParams(tokenId: string, accountId: string, timestamp: string, network: string = hardhat.network.name) {
     let url = getMirrorNodeURL(network)
     let endpoint = `${url}api/v1/tokens/${tokenId}/balances?`;
 
@@ -113,7 +71,7 @@ export async function getTokenBalanceWithParams(tokenId: string, accountId: stri
     return data.data;
 }
 
-export async function getDataFromArbitraryString(link: string, network: string) {
+export async function getDataFromArbitraryString(link: string, network: string = hardhat.network.name) {
     let url = getMirrorNodeURL(network)
     let endpoint = `${url.slice(0, -1)}${link}`;
 
@@ -130,11 +88,11 @@ export async function getDataFromArbitraryString(link: string, network: string) 
     return data.data;
 }
 
-export async function getTokenDecimals(tokenId: string, network: string) {
+export async function getTokenDecimals(tokenId: string, network: string = hardhat.network.name) {
     return (await getTokenInfo(tokenId, network)).decimals;
 }
 
-export async function getAssociatedAccounts(startId: string|undefined, tokenId: string, network: string) {
+export async function getAssociatedAccounts(startId: string|undefined, tokenId: string, network: string = hardhat.network.name) {
     let result: any[] = []
     let url = getMirrorNodeURL(network)
     let endpoint;
@@ -156,7 +114,7 @@ export async function getAssociatedAccounts(startId: string|undefined, tokenId: 
     return result.reduce((acc, curr) => { return acc.concat(curr.account) }, [])
 }
 
-export async function getAssociatedAccount(id: string, tokenId: string, network: string) {
+export async function getAssociatedAccount(id: string, tokenId: string, network: string = hardhat.network.name) {
     let result: any[] = []
     let url = getMirrorNodeURL(network)
     let endpoint =`${url}api/v1/tokens/${tokenId}/balances?account.id=${id}`;
@@ -172,7 +130,7 @@ export async function getAssociatedAccount(id: string, tokenId: string, network:
     return false
 }
 
-export async function getTokenBalanceForId(id: string, tokenId: string, network: string) {
+export async function getTokenBalanceForId(id: string, tokenId: string, network: string = hardhat.network.name) {
     let url = getMirrorNodeURL(network)
     let endpoint = `${url}api/v1/accounts/${id}/tokens?token.id=${tokenId}`
     // console.log(endpoint)
@@ -183,7 +141,7 @@ export async function getTokenBalanceForId(id: string, tokenId: string, network:
     return data.data.tokens[0].balance
 }
 
-export async function getHbarBalanceForId(accountId: string, network: string) {
+export async function getHbarBalanceForId(accountId: string, network: string = hardhat.network.name) {
     let url = getMirrorNodeURL(network)
     let endpoint = `${url}api/v1/balances/?account.id=${accountId}`
     let data = await axios.get(endpoint)
@@ -193,7 +151,7 @@ export async function getHbarBalanceForId(accountId: string, network: string) {
     return data.data.balances[0].balance
 }
 
-export async function getHbarExchangeRateInUsd(network: string) {
+export async function getHbarExchangeRateInUsd(network: string = hardhat.network.name) {
     let url = getMirrorNodeURL(network)
     let endpoint = `${url}api/v1/network/exchangerate`
     let data = await axios.get(endpoint)
@@ -203,4 +161,15 @@ export async function getHbarExchangeRateInUsd(network: string) {
 
     // price of hbar in USD is (cent_equivalent/hbar_equivalent) / 100
     return (data.data.current_rate.cent_equivalent / data.data.current_rate.hbar_equivalent) / 100
+}
+
+export async function getTokensForId(id: string, tokenId: string, network: string = hardhat.network.name) {
+    let url = getMirrorNodeURL(network)
+    let endpoint = `${url}api/v1/accounts/${id}/tokens?token.id=${tokenId}`
+    let data = await axios.get(endpoint)
+      if(!data || !data.data) {
+        return -1
+    }
+
+    return data.data
 }
