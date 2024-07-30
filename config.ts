@@ -24,10 +24,30 @@ export const networks: NetworksUserConfig = {
 			  {
 				"account": process.env.LOCAL_ALICE_ID,
 				"privateKey": process.env.LOCAL_ALICE_PRIVATEKEY 
+			  },
+			  {
+				"account": process.env.LOCAL_BOB_ID,
+				"privateKey": process.env.LOCAL_BOB_PRIVATEKEY 
+			  },
+			  {
+				"account": process.env.LOCAL_CHARLIE_ID,
+				"privateKey": process.env.LOCAL_CHARLIE_PRIVATEKEY 
+			  },
+			  {
+				"account": process.env.LOCAL_OPERATOR_ID,
+				"privateKey": process.env.LOCAL_OPERATOR_PRIVATEKEY 
+			  },
+			  {
+				"account": process.env.LOCAL_CONTROLLER_ID,
+				"privateKey": process.env.LOCAL_CONTROLLER_PRIVATEKEY 
+			  },
+			  {
+				"account": process.env.LOCAL_OWNER_ID,
+				"privateKey": process.env.LOCAL_OWNER_PRIVATEKEY 
 			  }
 		]
 	},
-	testnet: {
+	testnet: { // add other roles for unit tests if using non-local chain
 		mirrorNodeUrl: 'https://testnet.mirrornode.hedera.com',
 		accounts: [
 			{

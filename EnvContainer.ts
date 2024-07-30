@@ -7,45 +7,34 @@ import hardhat from 'hardhat'
 export default class EnvContainer {
 
     // feeToId: AccountId
-    feeToSetterId?: AccountId
-    myAccountId?: AccountId
+    myAccountId: AccountId
     aliceId: AccountId
-    bobId?: AccountId
-    charlieId?: AccountId
-    devId?: AccountId
-    minterId?: AccountId
-    feeRecId?: AccountId
+    bobId: AccountId
+    charlieId: AccountId
+    operatorId: AccountId
+    controllerId: AccountId
+    ownerId: AccountId
 
-    ftsPk?: PrivateKey
-    myPrivateKey?: PrivateKey
+    myPrivateKey: PrivateKey
     alicePrivateKey: PrivateKey
-    bobPrivateKey?: PrivateKey
-    charliePrivateKey?: PrivateKey
-    devPrivateKey?: PrivateKey
-    minterPrivateKey?: PrivateKey
-    feeRecKey?: PrivateKey
+    bobPrivateKey: PrivateKey
+    charliePrivateKey: PrivateKey
+    operatorPrivateKey: PrivateKey
+    controllerPrivateKey: PrivateKey
+    ownerPrivateKey: PrivateKey
 
-    clientfts?: Client
-    myClient?: Client
+    myClient: Client
     aliceClient: Client
-    bobClient?: Client
-    charlieClient?: Client
-    devClient?: Client
-    minterClient?: Client
-    feeRecClient?: Client
+    bobClient: Client
+    charlieClient: Client
+    operatorClient: Client
+    controllerClient: Client
+    ownerClient: Client
 
-    sauce?: TokenId
-    usdc?: TokenId
-    strudel?: TokenId
-    dai?: TokenId
-    mic?: TokenId
-
-    whbarContractId?: ContractId
-    whbar?: TokenId
-
+    // fill in other cases if network is not local
     constructor(network: string = hardhat.network.name, path: string="./.env") {
-        switch(network) {
-            case 'local':
+        // switch(network) {
+            // case 'local':
             
                 this.myAccountId = AccountId.fromString(process.env.LOCAL_MYACCOUNTID!);
                 this.myPrivateKey = PrivateKey.fromStringECDSA(process.env.LOCAL_MYPRIVATEKEY!);
@@ -55,42 +44,44 @@ export default class EnvContainer {
                 this.alicePrivateKey = PrivateKey.fromStringECDSA(process.env.LOCAL_ALICE_PRIVATEKEY!);
                 this.aliceClient = Client.forLocalNode().setOperator(this.aliceId, this.alicePrivateKey);
               
-                this.feeRecId = AccountId.fromString(process.env.LOCAL_FEEREC_ID!);
-                this.feeRecKey = PrivateKey.fromStringECDSA(process.env.LOCAL_FEEREC_PRIVATEKEY!);
-                this.feeRecClient = Client.forLocalNode().setOperator(this.feeRecId!, this.feeRecKey!);
+                this.bobId = AccountId.fromString(process.env.LOCAL_BOB_ID!);
+                this.bobPrivateKey = PrivateKey.fromStringECDSA(process.env.LOCAL_BOB_PRIVATEKEY!);
+                this.bobClient = Client.forLocalNode().setOperator(this.bobId, this.bobPrivateKey);
 
-                break;            
-            case 'previewnet':
+                this.charlieId = AccountId.fromString(process.env.LOCAL_CHARLIE_ID!);
+                this.charliePrivateKey = PrivateKey.fromStringECDSA(process.env.LOCAL_CHARLIE_PRIVATEKEY!);
+                this.charlieClient = Client.forLocalNode().setOperator(this.charlieId, this.charliePrivateKey);
 
-                this.myAccountId = AccountId.fromString(process.env.PREVNET_MYACCOUNTID!);
-                this.myPrivateKey = PrivateKey.fromStringECDSA(process.env.PREVNET_MYPRIVATEKEY!);
-                this.myClient = Client.forPreviewnet().setOperator(this.myAccountId, this.myPrivateKey);
+                this.operatorId = AccountId.fromString(process.env.LOCAL_OPERATOR_ID!);
+                this.operatorPrivateKey = PrivateKey.fromStringECDSA(process.env.LOCAL_OPERATOR_PRIVATEKEY!);
+                this.operatorClient = Client.forLocalNode().setOperator(this.operatorId, this.operatorPrivateKey);
 
-                this.aliceId = AccountId.fromString(process.env.PREVNET_ALICE_ID!);
-                this.alicePrivateKey = PrivateKey.fromStringECDSA(process.env.PREVNET_ALICE_PRIVATEKEY!);
-                this.aliceClient = Client.forPreviewnet().setOperator(this.aliceId, this.alicePrivateKey);
+                this.controllerId = AccountId.fromString(process.env.LOCAL_CONTROLLER_ID!);
+                this.controllerPrivateKey = PrivateKey.fromStringECDSA(process.env.LOCAL_CONTROLLER_PRIVATEKEY!);
+                this.controllerClient = Client.forLocalNode().setOperator(this.controllerId, this.controllerPrivateKey);
+
+                this.ownerId = AccountId.fromString(process.env.LOCAL_OWNER_ID!);
+                this.ownerPrivateKey = PrivateKey.fromStringECDSA(process.env.LOCAL_OWNER_PRIVATEKEY!);
+                this.ownerClient = Client.forLocalNode().setOperator(this.ownerId, this.ownerPrivateKey);
+
+            //     break;            
+            // case 'previewnet': // add the rest to previewnet and local if using those
+
             
-                this.feeRecId = AccountId.fromString(process.env.PREVNET_FEEREC_ID!);
-                this.feeRecKey = PrivateKey.fromStringECDSA(process.env.PREVNET_FEEREC_PRIVATEKEY!);
-                this.feeRecClient = Client.forPreviewnet().setOperator(this.feeRecId!, this.feeRecKey!);   
+            //     break;
+            // case 'testnet':
+            // default:
                 
-                break;
-            case 'testnet':
-            default:
-                
-                this.myAccountId = AccountId.fromString(process.env.TESTNET_MYACCOUNTID!);
-                this.myPrivateKey = PrivateKey.fromStringECDSA(process.env.TESTNET_MYPRIVATEKEY!);
-                this.myClient = Client.forTestnet().setOperator(this.myAccountId, this.myPrivateKey);
+            //     this.myAccountId = AccountId.fromString(process.env.TESTNET_MYACCOUNTID!);
+            //     this.myPrivateKey = PrivateKey.fromStringECDSA(process.env.TESTNET_MYPRIVATEKEY!);
+            //     this.myClient = Client.forTestnet().setOperator(this.myAccountId, this.myPrivateKey);
 
-                this.aliceId = AccountId.fromString(process.env.TESTNET_ALICE_ID!);
-                this.alicePrivateKey = PrivateKey.fromStringECDSA(process.env.TESTNET_ALICE_PRIVATEKEY!);
-                this.aliceClient = Client.forTestnet().setOperator(this.aliceId, this.alicePrivateKey);
-            
-                this.feeRecId = AccountId.fromString(process.env.TESTNET_FEEREC_ID!);
-                this.feeRecKey = PrivateKey.fromStringECDSA(process.env.TESTNET_FEEREC_PRIVATEKEY!);
-                this.feeRecClient = Client.forTestnet().setOperator(this.feeRecId!, this.feeRecKey!);       
-                break;
-        }
+            //     this.aliceId = AccountId.fromString(process.env.TESTNET_ALICE_ID!);
+            //     this.alicePrivateKey = PrivateKey.fromStringECDSA(process.env.TESTNET_ALICE_PRIVATEKEY!);
+            //     this.aliceClient = Client.forTestnet().setOperator(this.aliceId, this.alicePrivateKey);
+
+            //     break;
+        // }
 
     }
 }

@@ -84,7 +84,7 @@ contract HTS1400 is IHTS1400, Ownable, HederaTokenService {
         address _initOwner,
         address _controller,
         bytes32 _defaultPartition_
-    ) Ownable(_initOwner) payable {
+    ) payable Ownable(_initOwner) {
         uint256 keyType;
         IHederaTokenService.KeyValue memory keyValue;
         IHederaTokenService.TokenKey[] memory keys = new IHederaTokenService.TokenKey[](7);
