@@ -72,7 +72,7 @@ contract HTS1400 is IHTS1400, Ownable, HederaTokenService {
     bytes32 internal _defaultPartition;
 
     // ------------- Hedera Security Token Address -------------
-    address immutable public token;
+    address public token;
 
     // note: owner roles: update token keys, kyc users
 
@@ -569,11 +569,17 @@ contract HTS1400 is IHTS1400, Ownable, HederaTokenService {
     // ------------- Owner functions -------------
 
     function ownerGrantTokenKyc(address account) external onlyOwner returns (int64) {
-        return grantTokenKyc(token, account);
+        unfreezeToken(token, account);
+        int64 respCode = grantTokenKyc(token, account);
+        freezeToken(token, account);
+        return respCode;
     }
 
     function ownerRevokeTokenKyc(address account) external onlyOwner returns (int64) {
-        return revokeTokenKyc(token, account);
+        unfreezeToken(token, account);
+        int64 respCode = revokeTokenKyc(token, account);
+        freezeToken(token, account);
+        return respCode;
     }
 
     function ownerPauseToken() external onlyOwner() returns(int64) {
