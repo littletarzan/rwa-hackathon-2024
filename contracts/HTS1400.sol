@@ -438,6 +438,7 @@ contract HTS1400 is IHTS1400, Ownable, HederaTokenService {
             _docNames[index] = _docNames[_docNames.length - 1];
             _docIndexes[_docNames[index]] = index + 1; 
         }
+        _docNames.pop();
         // _docNames.length--;
         emit DocumentRemoved(_name, _documents[_name].uri, _documents[_name].docHash);
         delete _documents[_name];
@@ -570,24 +571,24 @@ contract HTS1400 is IHTS1400, Ownable, HederaTokenService {
 
     function ownerGrantTokenKyc(address account) external onlyOwner returns (int64) {
         unfreezeToken(token, account);
-        int64 respCode = grantTokenKyc(token, account);
+        int64 respCode = grantTokenKyc(token, account); // TODO: require 22?
         freezeToken(token, account);
         return respCode;
     }
 
     function ownerRevokeTokenKyc(address account) external onlyOwner returns (int64) {
         unfreezeToken(token, account);
-        int64 respCode = revokeTokenKyc(token, account);
+        int64 respCode = revokeTokenKyc(token, account); // TODO: require 22?
         freezeToken(token, account);
         return respCode;
     }
 
     function ownerPauseToken() external onlyOwner() returns(int64) {
-        return pauseToken(token);
+        return pauseToken(token); // TODO: require 22?
     }
 
     function ownerUnpauseToken() external onlyOwner() returns(int64) {
-        return unpauseToken(token);
+        return unpauseToken(token); // TODO: require 22?
     }
 
     function ownerUpdateTokenKeys(IHederaTokenService.TokenKey[] memory keys) external onlyOwner() returns(int64) {
