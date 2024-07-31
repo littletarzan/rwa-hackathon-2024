@@ -10,12 +10,12 @@ import "./libraries/SafeMath.sol";
 import "./libraries/SafeCast.sol";
 import "./libraries/Bits.sol";
 
-import './base/HederaTokenService.sol';
+import './base/SafeHederaTokenService.sol';
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./interfaces/IHTS1400.sol";
 
-contract HTS1400 is IHTS1400, Ownable, HederaTokenService {
+contract HTS1400 is IHTS1400, Ownable, SafeHederaTokenService {
     
     using SafeMath for uint256; 
     using SafeCast for uint256;
@@ -171,10 +171,10 @@ contract HTS1400 is IHTS1400, Ownable, HederaTokenService {
         uint256 _fromIndex = partitionToIndex[_from][_partition] - 1;
         
         // unfreeze the token
-        unfreezeToken(token, _from);
+        safeUnfreezeToken(token, _from);
 
         // transfer from `_from` to `_to`
-        transferToken(token, _from, _to, _value.toInt64());
+        safeTransferToken(token, _from, _to, _value.toInt64());
 
         if (! _validPartitionForReceiver(_partition, _to)) {
             partitions[_to].push(Partition(0, _partition));
@@ -189,7 +189,7 @@ contract HTS1400 is IHTS1400, Ownable, HederaTokenService {
         // balances[_to] = balances[_to].add(_value); HTS keeps track of updated user balance
 
         // freeze the token
-        freezeToken(token, _from);
+        safeFreezeToken(token, _from);
         // Emit transfer event.
         emit TransferByPartition(_partition, _operator, _from, _to, _value, _data, _operatorData);
     }
@@ -283,12 +283,13 @@ contract HTS1400 is IHTS1400, Ownable, HederaTokenService {
     }
 
     function _issueByPartition(bytes32 _partition, address _tokenHolder, uint256 _value, bytes calldata _data) internal {
-        _validateParams(_partition, _value);
+        _validateParams(_value);
         require(_tokenHolder != address(0), "Invalid token receiver");
 
-        // mint and transfer HTS token 
-        mintToken(token, _value.toInt64(), new bytes[](0));
-        transferToken(token, address(this), _tokenHolder, _value.toInt64());
+        // unfreeze, mint, transfer, freeze
+        safeUnfreezeToken(token, _tokenHolder);
+        safeMintToken(token, _value.toInt64(), new bytes[](0));
+        safeTransferToken(token, address(this), _tokenHolder, _value.toInt64());
 
         // assign tokens to the specified partition
         uint256 index = partitionToIndex[_tokenHolder][_partition];
@@ -299,6 +300,7 @@ contract HTS1400 is IHTS1400, Ownable, HederaTokenService {
             partitions[_tokenHolder][index - 1].amount = partitions[_tokenHolder][index - 1].amount.add(_value);
         }
 
+        safeFreezeToken(token, _tokenHolder);
         // _totalSupply = _totalSupply.add(_value); HTS keeps track of total supply
         // balances[_tokenHolder] = balances[_tokenHolder].add(_value); HTS keeps track of global user balance
         emit IssuedByPartition(_partition, _tokenHolder, _value, _data);
@@ -306,15 +308,15 @@ contract HTS1400 is IHTS1400, Ownable, HederaTokenService {
 
     function _redeemByPartition(bytes32 _partition, address _from, address _operator, uint256 _value, bytes memory _data, bytes memory _operatorData) internal {
         // Add the function to validate the `_data` parameter
-        _validateParams(_partition, _value);
+        _validateParams(_value);
         require(_validPartition(_partition, _from), "Invalid partition");
         uint256 index = partitionToIndex[_from][_partition] - 1;
         require(partitions[_from][index].amount >= _value, "Insufficient value");
 
-        unfreezeToken(token, _from);
+        safeUnfreezeToken(token, _from);
         // transfer tokens to redeem from _from and burn
-        transferToken(token, _from, address(this), _value.toInt64());
-        burnToken(token, _value.toInt64(), new int64[](0));
+        safeTransferToken(token, _from, address(this), _value.toInt64());
+        safeBurnToken(token, _value.toInt64(), new int64[](0));
 
         if (partitions[_from][index].amount == _value) {
             _deletePartitionForHolder(_from, _partition, index);
@@ -322,7 +324,7 @@ contract HTS1400 is IHTS1400, Ownable, HederaTokenService {
             partitions[_from][index].amount = partitions[_from][index].amount.sub(_value);
         }
 
-        freezeToken(token, _from);
+        safeFreezeToken(token, _from);
         // balances[_from] = balances[_from].sub(_value); // HTS keeps track
         // _totalSupply = _totalSupply.sub(_value); // HTS keeps track
         emit RedeemedByPartition(_partition, _operator, _from, _value, _data);
@@ -337,9 +339,9 @@ contract HTS1400 is IHTS1400, Ownable, HederaTokenService {
         // partitions[_holder].length--;
     }
 
-    function _validateParams(bytes32 _partition, uint256 _value) internal pure {
+    function _validateParams(uint256 _value) internal pure {
         require(_value != uint256(0), "Zero value not allowed");
-        require(_partition != bytes32(0), "Invalid partition");
+        // require(_partition != bytes32(0), "Invalid partition");
     }
 
     // ERC1594
@@ -473,10 +475,10 @@ contract HTS1400 is IHTS1400, Ownable, HederaTokenService {
         uint256 _fromIndex = partitionToIndex[_from][_partition] - 1;
         
         // wipe the token from `_from`, _value is transferred to treasury (address(this))
-        wipeTokenAccount(token, _from, _value.toInt64()); // needs to be int64 safecast?
+        safeWipeTokenAccount(token, _from, _value.toInt64());
 
         // transfer from `_from` to `_to`
-        transferToken(token, address(this), _to, _value.toInt64());
+        safeTransferToken(token, address(this), _to, _value.toInt64());
 
         if (! _validPartitionForReceiver(_partition, _to)) {
             partitions[_to].push(Partition(0, _partition));
@@ -493,15 +495,15 @@ contract HTS1400 is IHTS1400, Ownable, HederaTokenService {
 
     /// @inheritdoc IHTS1644
     function controllerRedeem(address _from, bytes32 _partition, uint256 _value, bytes calldata _data, bytes calldata _operatorData) external onlyController {
-        _validateParams(_partition, _value);
+        _validateParams(_value);
         require(_validPartition(_partition, _from), "Invalid partition");
         uint256 index = partitionToIndex[_from][_partition] - 1;
         require(partitions[_from][index].amount >= _value, "Insufficient value");
         
         // wipe the token from `_from`, _value is transferred to treasury (address(this))
-        wipeTokenAccount(token, _from, _value.toInt64());
+        safeWipeTokenAccount(token, _from, _value.toInt64());
 
-        burnToken(token, _value.toInt64(), new int64[](0));
+        safeBurnToken(token, _value.toInt64(), new int64[](0));
 
         if (partitions[_from][index].amount == _value) {
             _deletePartitionForHolder(_from, _partition, index);
@@ -569,26 +571,24 @@ contract HTS1400 is IHTS1400, Ownable, HederaTokenService {
 
     // ------------- Owner functions -------------
 
-    function ownerGrantTokenKyc(address account) external onlyOwner returns (int64) {
-        unfreezeToken(token, account);
-        int64 respCode = grantTokenKyc(token, account); // TODO: require 22?
-        freezeToken(token, account);
-        return respCode;
+    function ownerGrantTokenKyc(address account) external onlyOwner {
+        safeUnfreezeToken(token, account);
+        safeGrantTokenKyc(token, account);
+        safeFreezeToken(token, account);
     }
 
-    function ownerRevokeTokenKyc(address account) external onlyOwner returns (int64) {
-        unfreezeToken(token, account);
-        int64 respCode = revokeTokenKyc(token, account); // TODO: require 22?
-        freezeToken(token, account);
-        return respCode;
+    function ownerRevokeTokenKyc(address account) external onlyOwner {
+        safeUnfreezeToken(token, account);
+        safeRevokeTokenKyc(token, account);
+        safeFreezeToken(token, account);
     }
 
-    function ownerPauseToken() external onlyOwner() returns(int64) {
-        return pauseToken(token); // TODO: require 22?
+    function ownerPauseToken() external onlyOwner() {
+        return safePauseToken(token); 
     }
 
-    function ownerUnpauseToken() external onlyOwner() returns(int64) {
-        return unpauseToken(token); // TODO: require 22?
+    function ownerUnpauseToken() external onlyOwner() {
+        return safeUnpauseToken(token);
     }
 
     function ownerUpdateTokenKeys(IHederaTokenService.TokenKey[] memory keys) external onlyOwner() returns(int64) {
