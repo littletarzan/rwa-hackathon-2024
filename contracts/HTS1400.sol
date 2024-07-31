@@ -261,6 +261,7 @@ contract HTS1400 is IHTS1400, Ownable, SafeHederaTokenService {
      /// @inheritdoc IHTS1410
     function issueByPartition(bytes32 _partition, address _tokenHolder, uint256 _value, bytes calldata _data) external onlyController {
         // Add the function to validate the `_data` parameter
+        require(issuance, "Issuance is closed");
         _issueByPartition(_partition, _tokenHolder, _value, _data);
     }
 
