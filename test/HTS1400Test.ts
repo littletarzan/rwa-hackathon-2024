@@ -41,7 +41,7 @@ import { BigNumber } from 'ethers'
   let HTS1400Contract: HTS1400
   let token: TokenId
 
-  let emptyBytes32 = web3.utils.padLeft(0, 64)
+  let emptyBytes32Str = web3.utils.padLeft(0, 64)
 
   async function HTS1400ContractFixtureLocal(): Promise<HTS1400>{
     let web3 = new Web3()
@@ -52,7 +52,7 @@ import { BigNumber } from 'ethers'
         8,
         env.ownerPrivateKey.publicKey.toEthereumAddress(),
         env.controllerPrivateKey.publicKey.toEthereumAddress(),
-        emptyBytes32, //[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+        emptyBytes32Str, //[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
         20
     )  
   }
@@ -158,12 +158,29 @@ describe('Contract', () => {
 
         docInfo = await HTS1400Contract.getDocument(nameBytes)
         expect(docInfo[0]).to.eq('')
-        expect(docInfo[1]).to.eq(emptyBytes32)
+        expect(docInfo[1]).to.eq(emptyBytes32Str)
         expect(docInfo[2]).to.eq(BigNumber.from(0))
       })
     })
-    it('Issue', async () => {
-      
+    it.only('Issue', async () => { // acts on default partition
+      await associateToken([token], env.aliceId, env.aliceClient)
+      await HTS1400Contract.connect(ownerSigner).ownerGrantTokenKyc(aliceRawPubKey)
+      await HTS1400Contract.connect(controllerSigner).issue(aliceRawPubKey, 1e8, emptyBytes32Str)
+
+      await sleep(4000)
+      let data = await getTokensForId(env.aliceId.toString(), token.toString())
+      let aliceBalance = data.tokens[0].balance
+      expect(+aliceBalance).to.eq(Math.pow(10, 8))
+      let aliceFreezeStatus = data.tokens[0].freeze_status
+      expect(aliceFreezeStatus).to.eq('FROZEN')      
+
+      // expect only one partition and 10^8 tokens to be in default partition
+      let alicePartitions = await HTS1400Contract.partitionsOf(aliceRawPubKey)
+      expect(alicePartitions.length).to.eq(1)
+      expect(alicePartitions[0]).to.eq(emptyBytes32Str)
+
+      let aliceDefaultPartitionBalance = await HTS1400Contract.balanceOfByPartition(emptyBytes32Str, aliceRawPubKey)
+      expect(aliceDefaultPartitionBalance.toNumber()).to.eq(Math.pow(10, 8))
     })
   })
 })
