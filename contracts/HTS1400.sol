@@ -337,7 +337,7 @@ contract HTS1400 is IHTS1400, Ownable, SafeHederaTokenService {
             partitionToIndex[_holder][partitions[_holder][index].partition] = index + 1;
         }
         delete partitionToIndex[_holder][_partition];
-        // partitions[_holder].length--;
+        partitions[_holder].pop();
     }
 
     function _validateParams(uint256 _value) internal pure {
