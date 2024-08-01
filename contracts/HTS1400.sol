@@ -475,10 +475,13 @@ contract HTS1400 is IHTS1400, Ownable, SafeHederaTokenService {
         require(_to != address(0), "0x address not allowed");
         uint256 _fromIndex = partitionToIndex[_from][_partition] - 1;
         
-        // wipe the token from `_from`, _value is transferred to treasury (address(this))
-        safeWipeTokenAccount(token, _from, _value.toInt64());
+        // unfreeze both accounts
+        safeUnfreezeToken(token, _from);
+        safeUnfreezeToken(token, _to);
 
-        // transfer from `_from` to `_to`
+        // wipe the token from `_from`, mint_value to treasury
+        safeWipeTokenAccount(token, _from, _value.toInt64());
+        safeMintToken(token, _value.toInt64(), new bytes[](0));
         safeTransferToken(token, address(this), _to, _value.toInt64());
 
         if (! _validPartitionForReceiver(_partition, _to)) {
@@ -490,6 +493,9 @@ contract HTS1400 is IHTS1400, Ownable, SafeHederaTokenService {
         // Changing the state values
         partitions[_from][_fromIndex].amount = partitions[_from][_fromIndex].amount.sub(_value);
         partitions[_to][_toIndex].amount = partitions[_to][_toIndex].amount.add(_value);
+
+        safeFreezeToken(token, _from);
+        safeFreezeToken(token, _to);
         // Emit transfer event.
         emit ControllerTransfer(msg.sender, _from, _to, _partition, _value, _data, _operatorData);
     }
