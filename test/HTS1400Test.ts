@@ -210,13 +210,67 @@ describe('Contract', () => {
       let aliceDefaultPartitionBalance = await HTS1400Contract.balanceOfByPartition(newPartition, aliceRawPubKey)
       expect(aliceDefaultPartitionBalance.toNumber()).to.eq(Math.pow(10, 8))
     })
-    it.only('Redeem', async () => { // acts on default partition
+    it('Controller transfer', async () => {
+      // getting DUPLICATE_TRANSACTION errors on ContractCallQuery without all the sleeps
+      // issue to alice to default partition, confiscate 4 and send to bob
+      await associateToken([token], env.aliceId, env.aliceClient)
+      await sleep(2000)
+      await associateToken([token], env.bobId, env.bobClient)
+      await sleep(2000)
+      await HTS1400Contract.connect(ownerSigner).ownerGrantTokenKyc(aliceRawPubKey)
+      await HTS1400Contract.connect(ownerSigner).ownerGrantTokenKyc(bobRawPubKey)
+      await HTS1400Contract.connect(controllerSigner).issue(aliceRawPubKey, 1e8, emptyBytes32Str)
+
+      await HTS1400Contract.connect(controllerSigner).controllerTransfer(
+        aliceRawPubKey,
+        bobRawPubKey,
+        emptyBytes32Str,
+        4e7,
+        emptyBytes32Str,
+        emptyBytes32Str
+      )
+
+      await sleep(4000)
+      let data = await getTokensForId(env.aliceId.toString(), token.toString())
+      let balance = data.tokens[0].balance
+      expect(+balance).to.eq(6 * Math.pow(10, 7))
+      let freezeStatus = data.tokens[0].freeze_status
+      expect(freezeStatus).to.eq('FROZEN')
+ 
+      data = await getTokensForId(env.bobId.toString(), token.toString())
+      balance = data.tokens[0].balance
+      expect(+balance).to.eq(4 * Math.pow(10, 7))
+      freezeStatus = data.tokens[0].freeze_status
+      expect(freezeStatus).to.eq('FROZEN')
+
+      await sleep(2000)
+      // expect only one partition and 5e7 tokens to be in default partition for alice and bob
+      let alicePartitions = await HTS1400Contract.partitionsOf(aliceRawPubKey)
+      expect(alicePartitions.length).to.eq(1)
+      expect(alicePartitions[0]).to.eq(emptyBytes32Str)
+
+      await sleep(2000)
+      let aliceDefaultPartitionBalance = await HTS1400Contract.balanceOfByPartition(emptyBytes32Str, aliceRawPubKey)
+      expect(aliceDefaultPartitionBalance.toNumber()).to.eq(6 * Math.pow(10, 7))
+
+      await sleep(2000)
+      let bobPartitions = await HTS1400Contract.partitionsOf(bobRawPubKey)
+      expect(bobPartitions.length).to.eq(1)
+      expect(bobPartitions[0]).to.eq(emptyBytes32Str)
+      
+      await sleep(2000)
+      let bobDefaultPartitionBalance = await HTS1400Contract.balanceOfByPartition(emptyBytes32Str, bobRawPubKey)
+      expect(bobDefaultPartitionBalance.toNumber()).to.eq(4 * Math.pow(10, 7))
+    })
+  })
+  describe('#TokenHolder controlled functions', () => {
+    it('Redeem', async () => { // acts on default partition
       await associateToken([token], env.aliceId, env.aliceClient)
       await HTS1400Contract.connect(ownerSigner).ownerGrantTokenKyc(aliceRawPubKey)
       await HTS1400Contract.connect(controllerSigner).issue(aliceRawPubKey, 1e8, emptyBytes32Str)
 
       // redeem some and check subtraction in contract
-      
+
       await approveToken(token, env.aliceId.toString(), HTS1400ContractId.toString(), 1e8, env.aliceClient)
       await HTS1400Contract.connect(aliceSigner).redeem(4e7, emptyBytes32Str)
 
@@ -252,5 +306,62 @@ describe('Contract', () => {
       aliceFreezeStatus = data.tokens[0].freeze_status
       expect(aliceFreezeStatus).to.eq('FROZEN')
     })
+    it('RedeemByPartition', async () => {
+      await associateToken([token], env.aliceId, env.aliceClient)
+      await HTS1400Contract.connect(ownerSigner).ownerGrantTokenKyc(aliceRawPubKey)
+      let newPartition = web3.utils.padLeft(1, 64)
+      await HTS1400Contract.connect(controllerSigner).issueByPartition(
+        newPartition, 
+        aliceRawPubKey, 
+        1e8,
+        emptyBytes32Str
+      )
+
+      // redeem some and check subtraction in contract
+
+      await approveToken(token, env.aliceId.toString(), HTS1400ContractId.toString(), 1e8, env.aliceClient)
+      await HTS1400Contract.connect(aliceSigner).redeemByPartition(
+        newPartition, 
+        4e7, 
+        emptyBytes32Str
+      )
+
+      let alicePartitions = await HTS1400Contract.partitionsOf(aliceRawPubKey)
+      expect(alicePartitions.length).to.eq(1)
+      expect(alicePartitions[0]).to.eq(newPartition)
+
+      let aliceNewPartitionBalance = await HTS1400Contract.balanceOfByPartition(newPartition, aliceRawPubKey)
+      expect(aliceNewPartitionBalance.toNumber()).to.eq(6 * Math.pow(10, 7))
+
+      await sleep(4000)
+      let data = await getTokensForId(env.aliceId.toString(), token.toString())
+      let aliceBalance = data.tokens[0].balance
+      expect(+aliceBalance).to.eq(6 * Math.pow(10, 7))
+      let aliceFreezeStatus = data.tokens[0].freeze_status
+      expect(aliceFreezeStatus).to.eq('FROZEN')
+      
+      // redeem the rest
+
+      await HTS1400Contract.connect(aliceSigner).redeemByPartition(
+        newPartition, 
+        6e7, 
+        emptyBytes32Str
+      )
+
+      // expect no more partitions for alice and balance to return 0
+      alicePartitions = await HTS1400Contract.partitionsOf(aliceRawPubKey)
+      expect(alicePartitions.length).to.eq(0)
+
+      aliceNewPartitionBalance = await HTS1400Contract.balanceOfByPartition(newPartition, aliceRawPubKey)
+      expect(aliceNewPartitionBalance.toNumber()).to.eq(0)
+
+      await sleep(4000)
+      data = await getTokensForId(env.aliceId.toString(), token.toString())
+      aliceBalance = data.tokens[0].balance
+      expect(+aliceBalance).to.eq(0)
+      aliceFreezeStatus = data.tokens[0].freeze_status
+      expect(aliceFreezeStatus).to.eq('FROZEN')
+    })
   })
+
 })
