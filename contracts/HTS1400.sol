@@ -356,7 +356,8 @@ contract HTS1400 is IHTS1400, Ownable, SafeHederaTokenService {
     /// @inheritdoc IHTS1594
     function transferFromWithData(address _from, address _to, uint256 _value, bytes calldata _data) external {
         // Add a function to validate the `_data` parameter
-        _transferByPartition(msg.sender, _to, _value, _defaultPartition, _data, msg.sender, new bytes(0));
+        require( isOperator(msg.sender, _from) || isOperatorForPartition(_defaultPartition, msg.sender, _from), "53"); // 0x53	insufficient allowance
+        _transferByPartition(_from, _to, _value, _defaultPartition, _data, msg.sender, new bytes(0));
     }
 
     /// @inheritdoc IHTS1594
