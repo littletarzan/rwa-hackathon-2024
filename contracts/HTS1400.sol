@@ -379,7 +379,7 @@ contract HTS1400 is IHTS1400, Ownable, SafeHederaTokenService {
     function redeem(uint256 _value, bytes calldata _data) external {
         // Add a function to validate the `_data` parameter
         _redeemByPartition(_defaultPartition, msg.sender, msg.sender, _value, _data, new bytes(0));
-        emit Redeemed(address(0), msg.sender, _value, _data);
+        emit Redeemed(msg.sender, msg.sender, _value, _data);
     }
 
     /// @inheritdoc IHTS1594
