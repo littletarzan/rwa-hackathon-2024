@@ -170,8 +170,9 @@ contract HTS1400 is IHTS1400, Ownable, SafeHederaTokenService {
         require(_to != address(0), "0x address not allowed");
         uint256 _fromIndex = partitionToIndex[_from][_partition] - 1;
         
-        // unfreeze the token
+        // unfreeze both accounts
         safeUnfreezeToken(token, _from);
+        safeUnfreezeToken(token, _to);
 
         // transfer from `_from` to `_to`
         safeTransferToken(token, _from, _to, _value.toInt64());
@@ -190,6 +191,7 @@ contract HTS1400 is IHTS1400, Ownable, SafeHederaTokenService {
 
         // freeze the token
         safeFreezeToken(token, _from);
+        safeFreezeToken(token, _to);
         // Emit transfer event.
         emit TransferByPartition(_partition, _operator, _from, _to, _value, _data, _operatorData);
     }
