@@ -264,7 +264,7 @@ describe('Contract', () => {
     })
   })
   describe('#TokenHolder controlled functions', () => {
-    it('transfer', async () => {
+    it('Transfer', async () => {
       await associateToken([token], env.aliceId, env.aliceClient)
       // await sleep(2000)
       await associateToken([token], env.bobId, env.bobClient)
@@ -308,7 +308,7 @@ describe('Contract', () => {
       let bobDefaultPartitionBalance = await HTS1400Contract.balanceOfByPartition(emptyBytes32Str, bobRawPubKey)
       expect(bobDefaultPartitionBalance.toNumber()).to.eq(4 * Math.pow(10, 7))
     })
-    it('transferByPartition', async () => {
+    it('TransferByPartition', async () => {
       await associateToken([token], env.aliceId, env.aliceClient)
       await associateToken([token], env.bobId, env.bobClient)
       let newPartition = web3.utils.padLeft(1, 64)
@@ -454,6 +454,28 @@ describe('Contract', () => {
       aliceFreezeStatus = data.tokens[0].freeze_status
       expect(aliceFreezeStatus).to.eq('FROZEN')
     })
+  })
+  describe('#Operator', () => {
+    it('Authorize and revoke', async () => {
+      await HTS1400Contract.authorizeOperator(aliceRawPubKey)
+      let isAuth = await HTS1400Contract.isOperator(aliceRawPubKey, myRawPubKey)
+      expect(isAuth).to.eq(true)
+
+      await HTS1400Contract.revokeOperator(aliceRawPubKey)
+      isAuth = await HTS1400Contract.isOperator(aliceRawPubKey, myRawPubKey)
+      expect(isAuth).to.eq(false)
+    })
+    it('Authorize and revoke by partition', async () => {
+      let newPartition = web3.utils.padLeft(1, 64)
+      await HTS1400Contract.authorizeOperatorByPartition(newPartition, aliceRawPubKey)
+      let isAuth = await HTS1400Contract.isOperatorForPartition(newPartition, aliceRawPubKey, myRawPubKey)
+      expect(isAuth).to.eq(true)
+
+      await HTS1400Contract.revokeOperatorByPartition(newPartition, aliceRawPubKey)
+      isAuth = await HTS1400Contract.isOperatorForPartition(newPartition, aliceRawPubKey, myRawPubKey)
+      expect(isAuth).to.eq(false)
+    })
+
   })
 
 })
