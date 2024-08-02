@@ -573,8 +573,6 @@ contract HTS1400 is IHTS1400, Ownable, SafeHederaTokenService {
         // TODO: revisit operator/controller/owner check
         require( isOperator(msg.sender, _from) || isOperatorForPartition(_defaultPartition, msg.sender, _from), "53"); // 0x53	insufficient allowance
 
-        // HTS checks for allowance
-
         _transferByPartition(_from, _to, _value, _defaultPartition, new bytes(0), msg.sender, new bytes(0));
         return true;
     }
