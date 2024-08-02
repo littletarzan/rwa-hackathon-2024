@@ -29,6 +29,7 @@ import { BigNumber } from 'ethers'
   let myRawPubKey: string
   let aliceRawPubKey: string
   let bobRawPubKey: string
+  let operatorRawPubKey: string
 
   let mySigner: SignerWithAddress;
   let aliceSigner: any;
@@ -66,6 +67,7 @@ describe('Contract', () => {
     myRawPubKey = ""+env.myPrivateKey.publicKey.toEthereumAddress()
     aliceRawPubKey = ""+env.alicePrivateKey.publicKey.toEthereumAddress()
     bobRawPubKey = ""+env.bobPrivateKey.publicKey.toEthereumAddress()
+    operatorRawPubKey = ""+env.operatorPrivateKey.publicKey.toEthereumAddress()
 
     const wallets = await (hethers as any).getSigners()
     ;[wallet, other] = wallets
@@ -475,7 +477,82 @@ describe('Contract', () => {
       isAuth = await HTS1400Contract.isOperatorForPartition(newPartition, aliceRawPubKey, myRawPubKey)
       expect(isAuth).to.eq(false)
     })
+    it('Operator transfer by partition', async () => {
+      // authorize operator to transfer from alice to bob
+      await associateToken([token], env.aliceId, env.aliceClient)
+      await associateToken([token], env.bobId, env.bobClient)
+      await HTS1400Contract.connect(ownerSigner).ownerGrantTokenKyc(aliceRawPubKey)
+      await HTS1400Contract.connect(ownerSigner).ownerGrantTokenKyc(bobRawPubKey)
+      let newPartition = web3.utils.padLeft(1, 64)
+      await HTS1400Contract.connect(controllerSigner).issueByPartition(
+        newPartition, 
+        aliceRawPubKey, 
+        1e8,
+        emptyBytes32Str
+      )
 
+      await HTS1400Contract.connect(aliceSigner).authorizeOperator(operatorRawPubKey)
+      let isAuth = await HTS1400Contract.isOperator(operatorRawPubKey, aliceRawPubKey)
+      expect(isAuth).to.eq(true)
+
+      await approveToken(token, env.aliceId.toString(), HTS1400ContractId.toString(), 1e8, env.aliceClient)
+      await HTS1400Contract.connect(operatorSigner).operatorTransferByPartition(
+        newPartition,
+        aliceRawPubKey,
+        bobRawPubKey,
+        4e7,
+        emptyBytes32Str,
+        emptyBytes32Str
+      )
+
+      await sleep(4000)
+      let data = await getTokensForId(env.aliceId.toString(), token.toString())
+      let balance = data.tokens[0].balance
+      expect(+balance).to.eq(6 * Math.pow(10, 7))
+      let freezeStatus = data.tokens[0].freeze_status
+      expect(freezeStatus).to.eq('FROZEN')
+ 
+      data = await getTokensForId(env.bobId.toString(), token.toString())
+      balance = data.tokens[0].balance
+      expect(+balance).to.eq(4 * Math.pow(10, 7))
+      freezeStatus = data.tokens[0].freeze_status
+      expect(freezeStatus).to.eq('FROZEN')
+
+      let alicePartitions = await HTS1400Contract.partitionsOf(aliceRawPubKey)
+      expect(alicePartitions.length).to.eq(1)
+      expect(alicePartitions[0]).to.eq(newPartition)
+
+      await sleep(2000)
+      let aliceNewPartitionBalance = await HTS1400Contract.balanceOfByPartition(newPartition, aliceRawPubKey)
+      expect(aliceNewPartitionBalance.toNumber()).to.eq(6 * Math.pow(10, 7))
+
+      await sleep(2000)
+      let bobPartitions = await HTS1400Contract.partitionsOf(bobRawPubKey)
+      expect(bobPartitions.length).to.eq(1)
+      expect(bobPartitions[0]).to.eq(newPartition)
+      
+      await sleep(2000)
+      let bobNewPartitionBalance = await HTS1400Contract.balanceOfByPartition(newPartition, bobRawPubKey)
+      expect(bobNewPartitionBalance.toNumber()).to.eq(4 * Math.pow(10, 7))
+
+      // should revert if stranger tries
+      try {
+        await HTS1400Contract.operatorTransferByPartition(
+          newPartition,
+          aliceRawPubKey,
+          bobRawPubKey,
+          1e7,
+          emptyBytes32Str,
+          emptyBytes32Str
+        )
+        assert("notnull" === null, 'this should not succeed')
+      } catch (err) {
+        assert(isError(err), 'unexpected error type');
+        if (isError(err)) {
+          assert(err.message.indexOf('CONTRACT_REVERT_EXECUTED') !== -1, 'did not have CONTRACT_REVERT_EXECUTED in error message: ' + err.message)
+        }
+      }
+    })
   })
 
 })
