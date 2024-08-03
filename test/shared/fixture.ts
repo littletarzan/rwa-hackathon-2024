@@ -10,7 +10,8 @@ export async function HTS1400ContractFixture(
   _initOwner: string,
   _controller: string,
   _defaultPartition: BytesLike,
-  hbarPayable: number
+  _hbarPayable: number,
+  _gasLimit: number = 1_000_000
 ): Promise<HTS1400> {
   
   let contractFactory = await hardhat.hethers.getContractFactory('HTS1400')
@@ -22,7 +23,7 @@ export async function HTS1400ContractFixture(
     _initOwner,
     _controller,
     _defaultPartition,
-  {value: hbarPayable}, {gasLimit: 6000000})) as unknown as HTS1400
+  {value: _hbarPayable}, {gasLimit: _gasLimit})) as unknown as HTS1400
 
   console.log()
   return contract

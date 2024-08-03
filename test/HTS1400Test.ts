@@ -1,15 +1,14 @@
 import EnvContainer from '../EnvContainer'
-import { approveToken, associateToken, dissociateToken, sleep, transferToken } from '../utils/hederaUtils'
+import { approveToken, associateToken, sleep } from '../utils/hederaUtils'
 import { ContractId, TokenId, TopicId } from '@hashgraph/sdk'
 import { solidity } from 'ethereum-waffle'
 import hardhat, { ethers, hethers } from 'hardhat'
 import { Wallet } from '@hashgraph/hethers'
 import chai, { assert, expect } from 'chai'
 import { HTS1400ContractFixture } from './shared/fixture'
-import { getHbarBalanceForId, getTokenBalanceForId, getTokenInfo, getTokensForId } from '../utils/mirrorNodeUtils'
+import { getHbarBalanceForId, getTokenInfo, getTokensForId } from '../utils/mirrorNodeUtils'
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
 import { HTS1400 } from '../typechain'
-import { keccak256 } from 'ethers/lib/utils'
 import Web3 from 'web3'
 import { BigNumber } from 'ethers'
 
@@ -23,8 +22,8 @@ import { BigNumber } from 'ethers'
   let env: EnvContainer
   let signersWithAddress: any
 
-  let wallet: Wallet
-  let other: Wallet
+  // let wallet: Wallet
+  // let other: Wallet
 
   let myRawPubKey: string
   let aliceRawPubKey: string
@@ -46,7 +45,6 @@ import { BigNumber } from 'ethers'
   let emptyBytes32Str = web3.utils.padLeft(0, 64)
 
   async function HTS1400ContractFixtureLocal(): Promise<HTS1400>{
-    let web3 = new Web3()
     return await HTS1400ContractFixture(
         "MySecurityToken",
         "MST",
@@ -54,7 +52,7 @@ import { BigNumber } from 'ethers'
         8,
         env.ownerPrivateKey.publicKey.toEthereumAddress(),
         env.controllerPrivateKey.publicKey.toEthereumAddress(),
-        emptyBytes32Str, //[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+        emptyBytes32Str,
         20
     )  
   }
@@ -69,8 +67,8 @@ describe('Contract', () => {
     bobRawPubKey = ""+env.bobPrivateKey.publicKey.toEthereumAddress()
     operatorRawPubKey = ""+env.operatorPrivateKey.publicKey.toEthereumAddress()
 
-    const wallets = await (hethers as any).getSigners()
-    ;[wallet, other] = wallets
+    // const wallets = await (hethers as any).getSigners()
+    // ;[wallet, other] = wallets
     signersWithAddress = await (hethers as any).getSigners()
 
     mySigner = signersWithAddress[0]
@@ -136,8 +134,8 @@ describe('Contract', () => {
       let balanceAfter = await getHbarBalanceForId(HTS1400Contract.address)
       expect(+balanceAfter).to.eq(0)
     })
-    it('Can update keys', async () => { // TODO
-    })
+    // it('Can update keys', async () => { // TODO
+    // })
   })
   describe('#Controller controlled functions', () => {
     describe('#HTS1643', () => {
@@ -264,6 +262,47 @@ describe('Contract', () => {
       let bobDefaultPartitionBalance = await HTS1400Contract.balanceOfByPartition(emptyBytes32Str, bobRawPubKey)
       expect(bobDefaultPartitionBalance.toNumber()).to.eq(4 * Math.pow(10, 7))
     })
+    it('Controller redeem', async () => {
+      // getting DUPLICATE_TRANSACTION errors on ContractCallQuery without all the sleeps
+      // issue to alice to default partition, confiscate 4 and send to bob
+      await associateToken([token], env.aliceId, env.aliceClient)
+      await sleep(2000)
+      await associateToken([token], env.bobId, env.bobClient)
+      await sleep(2000)
+      await HTS1400Contract.connect(ownerSigner).ownerGrantTokenKyc(aliceRawPubKey)
+      await HTS1400Contract.connect(ownerSigner).ownerGrantTokenKyc(bobRawPubKey)
+      await HTS1400Contract.connect(controllerSigner).issue(aliceRawPubKey, 1e8, emptyBytes32Str)
+
+      await HTS1400Contract.connect(controllerSigner).controllerRedeem(
+        env.alicePrivateKey.publicKey.toEthereumAddress(),
+        emptyBytes32Str,
+        4e7,
+        emptyBytes32Str,
+        emptyBytes32Str
+      )
+
+      await sleep(4000)
+      let data = await getTokensForId(env.aliceId.toString(), token.toString())
+      let balance = data.tokens[0].balance
+      expect(+balance).to.eq(6 * Math.pow(10, 7))
+      let freezeStatus = data.tokens[0].freeze_status
+      expect(freezeStatus).to.eq('FROZEN')
+ 
+      await sleep(2000)
+      // expect only one partition and 6e7 tokens to be in default partition for alice and bob
+      let alicePartitions = await HTS1400Contract.partitionsOf(aliceRawPubKey)
+      expect(alicePartitions.length).to.eq(1)
+      expect(alicePartitions[0]).to.eq(emptyBytes32Str)
+
+      await sleep(2000)
+      let aliceDefaultPartitionBalance = await HTS1400Contract.balanceOfByPartition(emptyBytes32Str, aliceRawPubKey)
+      expect(aliceDefaultPartitionBalance.toNumber()).to.eq(6 * Math.pow(10, 7))
+
+      // check total supply
+      data = await getTokenInfo(token.toString())
+      expect(+data.total_supply).to.eq(6 * Math.pow(10, 7))
+      console.log()
+    })
   })
   describe('#TokenHolder controlled functions', () => {
     it('Transfer', async () => {
@@ -310,7 +349,7 @@ describe('Contract', () => {
       let bobDefaultPartitionBalance = await HTS1400Contract.balanceOfByPartition(emptyBytes32Str, bobRawPubKey)
       expect(bobDefaultPartitionBalance.toNumber()).to.eq(4 * Math.pow(10, 7))
     })
-    it('Transfer with data', async () => { // fundamentally not much different than transfer
+    it('Transfer with data', async () => {
       await associateToken([token], env.aliceId, env.aliceClient)
       // await sleep(2000)
       await associateToken([token], env.bobId, env.bobClient)
@@ -443,6 +482,9 @@ describe('Contract', () => {
       expect(+aliceBalance).to.eq(0)
       aliceFreezeStatus = data.tokens[0].freeze_status
       expect(aliceFreezeStatus).to.eq('FROZEN')
+
+      data = await getTokenInfo(token.toString())
+      expect(+data.total_supply).to.eq(0)
     })
     it('RedeemByPartition', async () => {
       await associateToken([token], env.aliceId, env.aliceClient)
@@ -499,6 +541,9 @@ describe('Contract', () => {
       expect(+aliceBalance).to.eq(0)
       aliceFreezeStatus = data.tokens[0].freeze_status
       expect(aliceFreezeStatus).to.eq('FROZEN')
+
+      data = await getTokenInfo(token.toString())
+      expect(+data.total_supply).to.eq(0)
     })
   })
   describe('#Operator', () => {
@@ -775,6 +820,9 @@ describe('Contract', () => {
       expect(+aliceBalance).to.eq(6 * Math.pow(10, 7))
       let aliceFreezeStatus = data.tokens[0].freeze_status
       expect(aliceFreezeStatus).to.eq('FROZEN')
+
+      data = await getTokenInfo(token.toString())
+      expect(+data.total_supply).to.eq(6 * Math.pow(10, 7))
 
       // should revert if stranger tries
       try {

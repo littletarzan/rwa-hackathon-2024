@@ -510,16 +510,20 @@ contract HTS1400 is IHTS1400, Ownable, SafeHederaTokenService {
         uint256 index = partitionToIndex[_from][_partition] - 1;
         require(partitions[_from][index].amount >= _value, "Insufficient value");
         
+        safeUnfreezeToken(token, _from);
+
         // wipe the token from `_from`, _value is transferred to treasury (address(this))
         safeWipeTokenAccount(token, _from, _value.toInt64());
 
-        safeBurnToken(token, _value.toInt64(), new int64[](0));
+        // safeBurnToken(token, _value.toInt64(), new int64[](0));
 
         if (partitions[_from][index].amount == _value) {
             _deletePartitionForHolder(_from, _partition, index);
         } else {
             partitions[_from][index].amount = partitions[_from][index].amount.sub(_value);
         }
+
+        safeFreezeToken(token, _from);
         // balances[_from] = balances[_from].sub(_value); // HTS keeps track
         // _totalSupply = _totalSupply.sub(_value); // HTS keeps track
         emit ControllerRedemption(msg.sender, _from, _value, _data, _operatorData);
