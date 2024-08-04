@@ -4,7 +4,6 @@ import hardhat, { hethers } from 'hardhat'
 import { HTS1400 } from '../../typechain'
 import HTS1400JSON from '../../artifacts/contracts/HTS1400.sol/HTS1400.json'
 import Web3 from 'web3'
-import { approveToken } from "../../utils/hederaUtils"
 
 async function main() {
     let env = new EnvContainer(hardhat.network.name, './.env')
@@ -14,13 +13,8 @@ async function main() {
     if (!HTS1400ContractId) {
         throw new Error('HTS1400ContractId not set in EnvContainer.ts')
     }
-    let HTS1400Token = env.HTS1400Token
-    if (!HTS1400Token) {
-        throw new Error('HTS1400Token not set in EnvContainer.ts')
-    }
-
     let signersWithAddress = await (hethers as any).getSigners()
-    let signer = signersWithAddress[1];
+    let controllerSigner = signersWithAddress[5];
 
     let hts1400 = await hardhat.hethers.getContractAtFromArtifact(
         HTS1400JSON, 
@@ -28,15 +22,15 @@ async function main() {
     ) as unknown as HTS1400
 
     let gasLimit = 250_000
-    let partition = web3.utils.padLeft(1, 64)
+    let partition = web3.utils.padLeft(0, 64)
     let from = env.alicePrivateKey.publicKey.toEthereumAddress();
     let amount = 1e7;
     let data = web3.utils.padLeft(0, 64)
-
-    await approveToken(HTS1400Token, env.aliceId.toString(), HTS1400ContractId.toString(), amount, env.aliceClient)
-    let tx = await hts1400.connect(signer).redeemByPartition(
+    let tx = await hts1400.connect(controllerSigner).controllerRedeem(
+        from,
         partition,
         amount,
+        data,
         data,
         {gasLimit: gasLimit}
     )

@@ -9,7 +9,10 @@ async function main() {
     let env = new EnvContainer(hardhat.network.name, './.env')
     let web3 = new Web3()
 
-    let HTS1400ContractId: ContractId = ContractId.fromString('')
+    let HTS1400ContractId = env.HTS1400Contract
+    if (!HTS1400ContractId) {
+        throw new Error('HTS1400ContractId not set in EnvContainer.ts')
+    }
     let signersWithAddress = await (hethers as any).getSigners()
     let mySigner = signersWithAddress[0];
 

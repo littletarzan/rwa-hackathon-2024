@@ -32,6 +32,7 @@ export default class EnvContainer {
     ownerClient: Client
 
     HTS1400Contract?: ContractId
+    HTS1400Token?: TokenId
 
     // fill in other cases if network is not local
     constructor(network: string = hardhat.network.name, path: string="./.env") {
@@ -67,6 +68,7 @@ export default class EnvContainer {
                 this.ownerClient = Client.forLocalNode().setOperator(this.ownerId, this.ownerPrivateKey);
 
                 this.HTS1400Contract = ContractId.fromString(process.env.LOCAL_HTS1400_CONTRACT_ID!);
+                this.HTS1400Token = TokenId.fromString(process.env.LOCAL_HTS1400_TOKEN_ID!)
             //     break;            
             // case 'previewnet': // add the rest to previewnet and local if using those
 
