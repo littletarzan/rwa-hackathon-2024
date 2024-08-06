@@ -20,4 +20,5 @@ interface IHTS1400 is IHTS1410, IHTS1594, IHTS1643, IHTS1644, IERC20 {
 
     function ownerUpdateTokenKeys(IHederaTokenService.TokenKey[] memory keys) external returns(int64);
 
+    function ownerUpdateTokenInfo(IHederaTokenService.HederaToken memory tokenInfo) external returns(int64);
 }

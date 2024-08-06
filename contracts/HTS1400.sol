@@ -604,6 +604,10 @@ contract HTS1400 is IHTS1400, Ownable, SafeHederaTokenService {
         return updateTokenKeys(token, keys);
     }
 
+    function ownerUpdateTokenInfo(IHederaTokenService.HederaToken memory tokenInfo) external onlyOwner() returns(int64) {
+        return updateTokenInfo(token, tokenInfo);
+    }
+
     function withdrawHbar(uint256 _amount) external onlyOwner() {
         (bool success, ) = payable(owner()).call{value: _amount}("");
         require(success, 'withdrawHbar failed');

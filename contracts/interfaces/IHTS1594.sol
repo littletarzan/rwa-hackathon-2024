@@ -92,7 +92,7 @@ interface IHTS1594 {
      * @return byte Ethereum status code (ESC)
      * @return bytes32 Application specific reason code 
      */
-    function canTransfer(address _to, uint256 _value, bytes calldata  _data) external view returns (bool, bytes1, bytes32);
+    function canTransfer(address _to, uint256 _value, bytes calldata _data) external view returns (bool, bytes1, bytes32);
     
     /**
      * @notice Transfers of securities may fail for a number of reasons. So this function will used to understand the
