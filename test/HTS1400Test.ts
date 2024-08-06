@@ -2,8 +2,7 @@ import EnvContainer from '../EnvContainer'
 import { approveToken, associateToken, sleep } from '../utils/hederaUtils'
 import { ContractId, TokenId, TopicId } from '@hashgraph/sdk'
 import { solidity } from 'ethereum-waffle'
-import hardhat, { ethers, hethers } from 'hardhat'
-import { Wallet } from '@hashgraph/hethers'
+import { hethers } from 'hardhat'
 import chai, { assert, expect } from 'chai'
 import { HTS1400ContractFixture } from './shared/fixture'
 import { getHbarBalanceForId, getTokenInfo, getTokensForId } from '../utils/mirrorNodeUtils'
@@ -21,9 +20,6 @@ import { BigNumber } from 'ethers'
 
   let env: EnvContainer
   let signersWithAddress: any
-
-  // let wallet: Wallet
-  // let other: Wallet
 
   let myRawPubKey: string
   let aliceRawPubKey: string
@@ -67,8 +63,6 @@ describe('Contract', () => {
     bobRawPubKey = ""+env.bobPrivateKey.publicKey.toEthereumAddress()
     operatorRawPubKey = ""+env.operatorPrivateKey.publicKey.toEthereumAddress()
 
-    // const wallets = await (hethers as any).getSigners()
-    // ;[wallet, other] = wallets
     signersWithAddress = await (hethers as any).getSigners()
 
     mySigner = signersWithAddress[0]
@@ -78,8 +72,6 @@ describe('Contract', () => {
     operatorSigner = signersWithAddress[4]
     controllerSigner = signersWithAddress[5]
     ownerSigner = signersWithAddress[6]
-
-    console.log()
   })
   
   beforeEach(async function () {
@@ -87,7 +79,6 @@ describe('Contract', () => {
     HTS1400Contract = await HTS1400ContractFixtureLocal()
     HTS1400ContractId = ContractId.fromSolidityAddress(HTS1400Contract.address)
     token = TokenId.fromSolidityAddress(await HTS1400Contract.connect(mySigner).token())
-    console.log()
 
   })
 
@@ -109,10 +100,8 @@ describe('Contract', () => {
     it('Can grant/revoke kyc', async () => {
       
       await associateToken([token], env.aliceId, env.aliceClient)
-      console.log()
       await sleep(2000)
       let tokenInfo = await getTokensForId(env.aliceId.toString(), token.toString())
-      console.log()
       expect(tokenInfo.tokens[0].kyc_status).to.eq('REVOKED')
       
       await HTS1400Contract.connect(ownerSigner).ownerGrantTokenKyc(aliceRawPubKey)
@@ -301,7 +290,6 @@ describe('Contract', () => {
       // check total supply
       data = await getTokenInfo(token.toString())
       expect(+data.total_supply).to.eq(6 * Math.pow(10, 7))
-      console.log()
     })
   })
   describe('#TokenHolder controlled functions', () => {
