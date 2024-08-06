@@ -408,7 +408,7 @@ contract HTS1400 is IHTS1400, Ownable, SafeHederaTokenService {
     /// @inheritdoc IHTS1594
     function canTransferFrom(address _from, address _to, uint256 _value, bytes calldata _data) external view returns (bool, bytes1, bytes32) {
         // Add a function to validate the `_data` parameter
-        if (_value > IERC20(token).allowance(_from, msg.sender)) // if (_value > _allowed[_from][msg.sender])
+        if (_value > IERC20(token).allowance(_from, address(this)) || !isOperator( msg.sender, _from))
             return (false, 0x53, bytes32(0));
 
         else if (IERC20(token).balanceOf(_from) < _value)

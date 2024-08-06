@@ -843,7 +843,75 @@ describe('Contract', () => {
     })
   })
   describe('#View functions', () => {
-    it.only('canTransferByPartition', async () => {
+    it('canTransfer', async () => {
+
+      await associateToken([token], env.myAccountId, env.myClient)
+      await HTS1400Contract.connect(ownerSigner).ownerGrantTokenKyc(myRawPubKey)
+      await HTS1400Contract.connect(controllerSigner).issue(myRawPubKey, 1e8, emptyBytes32Str)
+      
+      let bytes = await HTS1400Contract.canTransfer(
+        bobRawPubKey,
+        100000001,
+        emptyBytes32Str
+      )
+      expect(bytes[0]).to.eq(false)
+      expect(bytes[1].toString()).to.eq('0x52')
+
+      bytes = await HTS1400Contract.canTransfer(
+        '0x0000000000000000000000000000000000000000',
+        1e8,
+        emptyBytes32Str
+      )
+      expect(bytes[0]).to.eq(false)
+      expect(bytes[1].toString()).to.eq('0x57')
+      // TODO: not sure how to trigger overflows
+    })
+    it('canTransferFrom', async () => {
+
+      await associateToken([token], env.aliceId, env.aliceClient)
+      await HTS1400Contract.connect(ownerSigner).ownerGrantTokenKyc(aliceRawPubKey)
+      await HTS1400Contract.connect(controllerSigner).issue(aliceRawPubKey, 1e8, emptyBytes32Str)
+      
+      let bytes = await HTS1400Contract.canTransferFrom(
+        aliceRawPubKey,
+        myRawPubKey,
+        1,
+        emptyBytes32Str
+      )
+      expect(bytes[0]).to.eq(false)
+      expect(bytes[1].toString()).to.eq('0x53')
+
+      await HTS1400Contract.connect(aliceSigner).authorizeOperator(myRawPubKey)
+      bytes = await HTS1400Contract.canTransferFrom(
+        aliceRawPubKey,
+        myRawPubKey,
+        1,
+        emptyBytes32Str
+      )
+      expect(bytes[0]).to.eq(false)
+      expect(bytes[1].toString()).to.eq('0x53')
+
+      await approveToken(token, env.aliceId.toString(), HTS1400ContractId.toString(), 1e9, env.aliceClient)
+      bytes = await HTS1400Contract.canTransferFrom(
+        aliceRawPubKey,
+        myRawPubKey,
+        100000001,
+        emptyBytes32Str
+      )
+      expect(bytes[0]).to.eq(false)
+      expect(bytes[1].toString()).to.eq('0x52')
+
+      bytes = await HTS1400Contract.canTransferFrom(
+        aliceRawPubKey,
+        '0x0000000000000000000000000000000000000000',
+        100000000,
+        emptyBytes32Str
+      )
+      expect(bytes[0]).to.eq(false)
+      expect(bytes[1].toString()).to.eq('0x57')
+      // TODO: not sure how to trigger overflows
+    })
+    it('canTransferByPartition', async () => {
 
       let bytes = await HTS1400Contract.canTransferByPartition(
         aliceRawPubKey,
