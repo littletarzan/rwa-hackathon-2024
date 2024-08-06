@@ -121,7 +121,6 @@ contract HTS1400 is IHTS1400, Ownable, SafeHederaTokenService {
     }
 
     // ERC1410 Basic
-
     function balanceOfByPartition(bytes32 _partition, address _tokenHolder) external view returns (uint256) {
         if (_validPartition(_partition, _tokenHolder))
             return partitions[_tokenHolder][partitionToIndex[_tokenHolder][_partition] - 1].amount;
@@ -153,11 +152,11 @@ contract HTS1400 is IHTS1400, Ownable, SafeHederaTokenService {
         // TODO: Applied the check over the `_data` parameter
         if (!_validPartition(_partition, _from))
             return (0x50, "Partition not exists", bytes32(""));
-        else if (partitions[_from][partitionToIndex[_from][_partition]].amount < _value)
+        else if (partitions[_from][partitionToIndex[_from][_partition] - 1].amount < _value)
             return (0x52, "Insufficent balance", bytes32(""));
         else if (_to == address(0))
             return (0x57, "Invalid receiver", bytes32(""));
-        else if (!KindMath.checkSub(IERC20(token).balanceOf(_from), _value) || !KindMath.checkAdd(IERC20(token).balanceOf(_to), _value))
+        else if (IERC20(token).balanceOf(_from) < _value || !KindMath.checkAddForInt64(IERC20(token).balanceOf(_from), _value))
             return (0x50, "Overflow", bytes32(""));
         
         // Call function to get the receiver's partition. For current implementation returning the same as sender's
@@ -401,7 +400,7 @@ contract HTS1400 is IHTS1400, Ownable, SafeHederaTokenService {
         else if (_to == address(0))
             return (false, 0x57, bytes32(0));
 
-        else if (!KindMath.checkAdd(IERC20(token).balanceOf(_to), _value)) // TODO: adapt to int64 type
+        else if (!KindMath.checkAddForInt64(IERC20(token).balanceOf(_to), _value))
             return (false, 0x50, bytes32(0));
         return (true, 0x51, bytes32(0));
     }
@@ -418,7 +417,7 @@ contract HTS1400 is IHTS1400, Ownable, SafeHederaTokenService {
         else if (_to == address(0))
             return (false, 0x57, bytes32(0));
 
-        else if (!KindMath.checkAdd(IERC20(token).balanceOf(_to), _value))
+        else if (!KindMath.checkAddForInt64(IERC20(token).balanceOf(_to), _value))
             return (false, 0x50, bytes32(0));
         return (true, 0x51, bytes32(0));
     }
@@ -515,8 +514,6 @@ contract HTS1400 is IHTS1400, Ownable, SafeHederaTokenService {
         // wipe the token from `_from`, _value is transferred to treasury (address(this))
         safeWipeTokenAccount(token, _from, _value.toInt64());
 
-        // safeBurnToken(token, _value.toInt64(), new int64[](0));
-
         if (partitions[_from][index].amount == _value) {
             _deletePartitionForHolder(_from, _partition, index);
         } else {
@@ -596,11 +593,11 @@ contract HTS1400 is IHTS1400, Ownable, SafeHederaTokenService {
     }
 
     function ownerPauseToken() external onlyOwner() {
-        return safePauseToken(token); 
+        safePauseToken(token);
     }
 
     function ownerUnpauseToken() external onlyOwner() {
-        return safeUnpauseToken(token);
+        safeUnpauseToken(token);
     }
 
     function ownerUpdateTokenKeys(IHederaTokenService.TokenKey[] memory keys) external onlyOwner() returns(int64) {

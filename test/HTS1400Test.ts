@@ -842,5 +842,40 @@ describe('Contract', () => {
       }
     })
   })
+  describe('#View functions', () => {
+    it.only('canTransferByPartition', async () => {
 
+      let bytes = await HTS1400Contract.canTransferByPartition(
+        aliceRawPubKey,
+        bobRawPubKey,
+        emptyBytes32Str,
+        1,
+        emptyBytes32Str
+      )
+      expect(bytes[0].toString()).to.eq('0x50')
+
+      await associateToken([token], env.aliceId, env.aliceClient)
+      await HTS1400Contract.connect(ownerSigner).ownerGrantTokenKyc(aliceRawPubKey)
+      await HTS1400Contract.connect(controllerSigner).issue(aliceRawPubKey, 1e8, emptyBytes32Str)
+      
+      bytes = await HTS1400Contract.canTransferByPartition(
+        aliceRawPubKey,
+        bobRawPubKey,
+        emptyBytes32Str,
+        100000001,
+        emptyBytes32Str
+      )
+      expect(bytes[0].toString()).to.eq('0x52')
+
+      bytes = await HTS1400Contract.canTransferByPartition(
+        aliceRawPubKey,
+        '0x0000000000000000000000000000000000000000',
+        emptyBytes32Str,
+        1e8,
+        emptyBytes32Str
+      )
+      expect(bytes[0].toString()).to.eq('0x57')
+      // TODO: not sure how to trigger overflows
+    })
+  })
 })
