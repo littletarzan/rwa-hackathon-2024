@@ -52,7 +52,7 @@ contract HTS1400 is IHTS1400, Ownable, SafeHederaTokenService {
     struct Document {
         bytes32 docHash; // Hash of the document
         uint256 lastModified; // Timestamp at which document details was last modified
-        string uri; // URI of the document that exist off-chain TODO: use address of hedera file service location
+        string uri; // URI of the document that exist off-chain
     }
 
     // mapping to store the documents details in the document
@@ -73,8 +73,6 @@ contract HTS1400 is IHTS1400, Ownable, SafeHederaTokenService {
 
     // ------------- Hedera Security Token Address -------------
     address public token;
-
-    // note: owner roles: update token keys, kyc users
 
     constructor(
         string memory _tokenName,
@@ -138,12 +136,6 @@ contract HTS1400 is IHTS1400, Ownable, SafeHederaTokenService {
 
     function transferByPartition(bytes32 _partition, address _to, uint256 _value, bytes calldata _data) external returns (bytes32) {
         // Add a function to verify the `_data` parameter
-        // TODO: Need to create the bytes division of the `_partition` so it can be easily findout in which receiver's partition
-        // token will transfered. For current implementation we are assuming that the receiver's partition will be same as sender's
-        // as well as it also pass the `_validPartition()` check. In this particular case we are also assuming that reciever has the
-        // some tokens of the same partition as well (To avoid the array index out of bound error).
-        // Note- There is no operator used for the execution of this call so `_operator` value in
-        // in event is msg.sender same for the `_operatorData`
         _transferByPartition(msg.sender, _to, _value, _partition, _data, msg.sender, "");
         return _partition; // ?
     }
@@ -169,11 +161,9 @@ contract HTS1400 is IHTS1400, Ownable, SafeHederaTokenService {
         require(_to != address(0), "0x address not allowed");
         uint256 _fromIndex = partitionToIndex[_from][_partition] - 1;
         
-        // unfreeze both accounts
         safeUnfreezeToken(token, _from);
         safeUnfreezeToken(token, _to);
 
-        // transfer from `_from` to `_to`
         safeTransferToken(token, _from, _to, _value.toInt64());
 
         if (! _validPartitionForReceiver(_partition, _to)) {
@@ -184,11 +174,8 @@ contract HTS1400 is IHTS1400, Ownable, SafeHederaTokenService {
         
         // Changing the state values
         partitions[_from][_fromIndex].amount = partitions[_from][_fromIndex].amount.sub(_value);
-        // balances[_from] = balances[_from].sub(_value); HTS keeps track of updated user balance
         partitions[_to][_toIndex].amount = partitions[_to][_toIndex].amount.add(_value);
-        // balances[_to] = balances[_to].add(_value); HTS keeps track of updated user balance
 
-        // freeze the token
         safeFreezeToken(token, _from);
         safeFreezeToken(token, _to);
         // Emit transfer event.
@@ -253,7 +240,7 @@ contract HTS1400 is IHTS1400, Ownable, SafeHederaTokenService {
         // TODO: Add a functionality of verifying the `_data`
         require(
             isOperator(msg.sender, _from) || isOperatorForPartition(_partition, msg.sender, _from),
-            "Not authorised"
+            "Not authorized"
         );
         _transferByPartition(_from, _to, _value, _partition, _data, msg.sender, _operatorData);
     }
@@ -279,7 +266,7 @@ contract HTS1400 is IHTS1400, Ownable, SafeHederaTokenService {
         require(_tokenHolder != address(0), "Invalid from address");
         require(
             isOperator(msg.sender, _tokenHolder) || isOperatorForPartition(_partition, msg.sender, _tokenHolder),
-            "Not authorised"
+            "Not authorized"
         );
         _redeemByPartition(_partition, _tokenHolder, msg.sender, _value, _data, _operatorData);
     }
@@ -288,7 +275,6 @@ contract HTS1400 is IHTS1400, Ownable, SafeHederaTokenService {
         _validateParams(_value);
         require(_tokenHolder != address(0), "Invalid token receiver");
 
-        // unfreeze, mint, transfer, freeze
         safeUnfreezeToken(token, _tokenHolder);
         safeMintToken(token, _value.toInt64(), new bytes[](0));
         safeTransferToken(token, address(this), _tokenHolder, _value.toInt64());
@@ -303,8 +289,6 @@ contract HTS1400 is IHTS1400, Ownable, SafeHederaTokenService {
         }
 
         safeFreezeToken(token, _tokenHolder);
-        // _totalSupply = _totalSupply.add(_value); HTS keeps track of total supply
-        // balances[_tokenHolder] = balances[_tokenHolder].add(_value); HTS keeps track of global user balance
         emit IssuedByPartition(_partition, _tokenHolder, _value, _data);
     }
 
@@ -316,7 +300,6 @@ contract HTS1400 is IHTS1400, Ownable, SafeHederaTokenService {
         require(partitions[_from][index].amount >= _value, "Insufficient value");
 
         safeUnfreezeToken(token, _from);
-        // transfer tokens to redeem from _from and burn
         safeTransferToken(token, _from, address(this), _value.toInt64());
         safeBurnToken(token, _value.toInt64(), new int64[](0));
 
@@ -327,8 +310,6 @@ contract HTS1400 is IHTS1400, Ownable, SafeHederaTokenService {
         }
 
         safeFreezeToken(token, _from);
-        // balances[_from] = balances[_from].sub(_value); // HTS keeps track
-        // _totalSupply = _totalSupply.sub(_value); // HTS keeps track
         emit RedeemedByPartition(_partition, _operator, _from, _value, _data);
     }
 
@@ -343,7 +324,6 @@ contract HTS1400 is IHTS1400, Ownable, SafeHederaTokenService {
 
     function _validateParams(uint256 _value) internal pure {
         require(_value != uint256(0), "Zero value not allowed");
-        // require(_partition != bytes32(0), "Invalid partition");
     }
 
     // ERC1594
@@ -426,7 +406,7 @@ contract HTS1400 is IHTS1400, Ownable, SafeHederaTokenService {
     /// @inheritdoc IHTS1643
     function setDocument(bytes32 _name, string memory _uri, bytes32 _documentHash) external onlyController {
         require(_name != bytes32(0), "Zero value is not allowed");
-        require(bytes(_uri).length > 0, "Should not be a empty uri");
+        require(bytes(_uri).length > 0, "Empty uri");
         if (_documents[_name].lastModified == uint256(0)) {
             _docNames.push(_name);
             _docIndexes[_name] = _docNames.length;
@@ -437,14 +417,13 @@ contract HTS1400 is IHTS1400, Ownable, SafeHederaTokenService {
 
     /// @inheritdoc IHTS1643
     function removeDocument(bytes32 _name) external onlyController {
-        require(_documents[_name].lastModified != uint256(0), "Document should be existed");
+        require(_documents[_name].lastModified != uint256(0), "Empty document");
         uint256 index = _docIndexes[_name] - 1;
         if (index != _docNames.length - 1) {
             _docNames[index] = _docNames[_docNames.length - 1];
             _docIndexes[_docNames[index]] = index + 1; 
         }
         _docNames.pop();
-        // _docNames.length--;
         emit DocumentRemoved(_name, _documents[_name].uri, _documents[_name].docHash);
         delete _documents[_name];
     }
@@ -477,11 +456,9 @@ contract HTS1400 is IHTS1400, Ownable, SafeHederaTokenService {
         require(_to != address(0), "0x address not allowed");
         uint256 _fromIndex = partitionToIndex[_from][_partition] - 1;
         
-        // unfreeze both accounts
         safeUnfreezeToken(token, _from);
         safeUnfreezeToken(token, _to);
 
-        // wipe the token from `_from`, mint_value to treasury
         safeWipeTokenAccount(token, _from, _value.toInt64());
         safeMintToken(token, _value.toInt64(), new bytes[](0));
         safeTransferToken(token, address(this), _to, _value.toInt64());
@@ -510,8 +487,6 @@ contract HTS1400 is IHTS1400, Ownable, SafeHederaTokenService {
         require(partitions[_from][index].amount >= _value, "Insufficient value");
         
         safeUnfreezeToken(token, _from);
-
-        // wipe the token from `_from`, _value is transferred to treasury (address(this))
         safeWipeTokenAccount(token, _from, _value.toInt64());
 
         if (partitions[_from][index].amount == _value) {
@@ -521,8 +496,6 @@ contract HTS1400 is IHTS1400, Ownable, SafeHederaTokenService {
         }
 
         safeFreezeToken(token, _from);
-        // balances[_from] = balances[_from].sub(_value); // HTS keeps track
-        // _totalSupply = _totalSupply.sub(_value); // HTS keeps track
         emit ControllerRedemption(msg.sender, _from, _value, _data, _operatorData);
     }
 
@@ -571,7 +544,6 @@ contract HTS1400 is IHTS1400, Ownable, SafeHederaTokenService {
 
     function transferFrom(address _from, address _to, uint256 _value) external override returns (bool) {
         // must explicitly check operator mapping otherwise the allowance is vulnerable to third party transfer
-        // TODO: revisit operator/controller/owner check
         require( isOperator(msg.sender, _from) || isOperatorForPartition(_defaultPartition, msg.sender, _from), "53"); // 0x53	insufficient allowance
 
         _transferByPartition(_from, _to, _value, _defaultPartition, new bytes(0), msg.sender, new bytes(0));

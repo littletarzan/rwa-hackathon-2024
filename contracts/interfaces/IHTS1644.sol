@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0
+// SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.20;
 
 interface IHTS1644 {
@@ -34,7 +34,7 @@ interface IHTS1644 {
     /**
      * @notice This function allows an authorised address to redeem tokens for any token holder.
      * The redemption must still respect the balances of the token holder (so the redemption must be for at most
-     * `balanceOf(_tokenHolder)` tokens) and potentially also need to respect other transfer restrictions.
+     * `balanceOf(_tokenHolder)` tokens) and potentially also respect other transfer restrictions.
      * @dev This function can only be executed by the `controller` address.
      * @param _tokenHolder The account whose tokens will be redeemed.
      * @param _partition The partition from which to redeem
