@@ -21,8 +21,8 @@ Inside a terminal in the cloned local node repository: </br>
 `hedera generate-accounts 7 --balance=10000000` - creates 7 accounts for unit testing </br>
 
 Create a file called `.env` in the root of **this** repository and copy/paste the sample env file </br>
-Copy/paste the account id's and ECDSA generated private keys</br>
-
+Copy/paste the account id's and ECDSA generated private keys</br></br>
+![Screenshot 2024-08-07 at 4 09 12 PM](https://github.com/user-attachments/assets/db4c53bd-1b5e-46ad-b131-2550df93dd4e) </br>
 `npm install` to install dependencies</br>
 `npx hardhat compile` to compile the smart contracts and create typechain bindings</br>
 
