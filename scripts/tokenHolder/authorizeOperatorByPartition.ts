@@ -14,7 +14,7 @@ async function main() {
         throw new Error('HTS1400ContractId not set in EnvContainer.ts')
     }
     let signersWithAddress = await (hethers as any).getSigners()
-    let mySigner = signersWithAddress[0];
+    let mySigner = signersWithAddress[1];
 
     let hts1400 = await hardhat.hethers.getContractAtFromArtifact(
         HTS1400JSON, 
@@ -22,8 +22,8 @@ async function main() {
     ) as unknown as HTS1400
 
     let gasLimit = 50_000
-    let partition = web3.utils.padLeft(0, 64)
-    let operator = env.aliceId.toSolidityAddress()
+    let partition = web3.utils.padLeft(1, 64)
+    let operator = env.operatorPrivateKey.publicKey.toEthereumAddress()
     let tx = await hts1400.connect(mySigner).authorizeOperatorByPartition(partition, operator, {gasLimit: gasLimit})
     let receipt = await tx.wait()
 

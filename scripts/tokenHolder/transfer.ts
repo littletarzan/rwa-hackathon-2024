@@ -1,4 +1,3 @@
-import { ContractId } from "@hashgraph/sdk"
 import EnvContainer from "../../EnvContainer"
 import hardhat, { hethers } from 'hardhat'
 import { HTS1400 } from '../../typechain'
@@ -8,7 +7,6 @@ import { approveToken } from "../../utils/hederaUtils"
 
 async function main() {
     let env = new EnvContainer(hardhat.network.name, './.env')
-    let web3 = new Web3()
 
     let HTS1400ContractId = env.HTS1400Contract
     if (!HTS1400ContractId) {

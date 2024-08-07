@@ -1,4 +1,3 @@
-import { ContractId } from "@hashgraph/sdk"
 import EnvContainer from "../../EnvContainer"
 import hardhat, { hethers } from 'hardhat'
 import { HTS1400 } from '../../typechain'
