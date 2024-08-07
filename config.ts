@@ -52,26 +52,32 @@ export const networks: NetworksUserConfig = {
 		accounts: [
 			{
 				"account": process.env.TESTNET_MYACCOUNTID,
-				"privateKey": process.env.TESTNET_MYPRIVATEKEY
-			},
-			{
+				"privateKey": process.env.TESTNET_MYPRIVATEKEY 
+			  },
+			  {
 				"account": process.env.TESTNET_ALICE_ID,
-				"privateKey": process.env.TESTNET_ALICE_PRIVATEKEY
-			}
-		]
-	},
-
-	previewnet: {
-		mirrorNodeUrl: 'https://previewnet.mirrornode.hedera.com',
-		accounts: [
-			{
-				"account": process.env.PREVNET_MYACCOUNTID,
-				"privateKey": process.env.PREVNET_MYPRIVATEKEY
-			},
-			{
-				"account": process.env.PREVNET_ALICE_ID,
-				"privateKey": process.env.PREVNET_ALICE_PRIVATEKEY
-			}
+				"privateKey": process.env.TESTNET_ALICE_PRIVATEKEY 
+			  },
+			  {
+				"account": process.env.TESTNET_BOB_ID,
+				"privateKey": process.env.TESTNET_BOB_PRIVATEKEY 
+			  },
+			  {
+				"account": process.env.TESTNET_CHARLIE_ID,
+				"privateKey": process.env.TESTNET_CHARLIE_PRIVATEKEY 
+			  },
+			  {
+				"account": process.env.TESTNET_OPERATOR_ID,
+				"privateKey": process.env.TESTNET_OPERATOR_PRIVATEKEY 
+			  },
+			  {
+				"account": process.env.TESTNET_CONTROLLER_ID,
+				"privateKey": process.env.TESTNET_CONTROLLER_PRIVATEKEY 
+			  },
+			  {
+				"account": process.env.TESTNET_OWNER_ID,
+				"privateKey": process.env.TESTNET_OWNER_PRIVATEKEY 
+			  }
 		]
 	}
 };
