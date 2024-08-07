@@ -15,7 +15,7 @@ async function main() {
         env.ownerPrivateKey.publicKey.toEthereumAddress(),
         env.controllerPrivateKey.publicKey.toEthereumAddress(),
         web3.utils.padLeft(0, 64),
-        20
+        20 // hbar payable
     )
     console.log('contract address = ' + hts1400.address)
     console.log('token address = ' + await hts1400.token())
