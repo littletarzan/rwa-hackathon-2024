@@ -25,6 +25,5 @@ export async function HTS1400ContractFixture(
     _defaultPartition,
   {value: _hbarPayable}, {gasLimit: _gasLimit})) as unknown as HTS1400
 
-  console.log()
   return contract
 }

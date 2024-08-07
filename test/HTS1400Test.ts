@@ -1,6 +1,6 @@
 import EnvContainer from '../EnvContainer'
 import { approveToken, associateToken, sleep } from '../utils/hederaUtils'
-import { ContractId, TokenId, TopicId } from '@hashgraph/sdk'
+import { ContractId, TokenId } from '@hashgraph/sdk'
 import { solidity } from 'ethereum-waffle'
 import { hethers } from 'hardhat'
 import chai, { assert, expect } from 'chai'
@@ -27,12 +27,12 @@ import { BigNumber } from 'ethers'
   let operatorRawPubKey: string
 
   let mySigner: SignerWithAddress;
-  let aliceSigner: any;
-  let bobSigner: any;
-  let charlieSigner: any;
-  let operatorSigner: any;
-  let controllerSigner: any;
-  let ownerSigner: any;
+  let aliceSigner: SignerWithAddress;
+  let bobSigner: SignerWithAddress;
+  let charlieSigner: SignerWithAddress;
+  let operatorSigner: SignerWithAddress;
+  let controllerSigner: SignerWithAddress;
+  let ownerSigner: SignerWithAddress;
 
   let HTS1400Contract: HTS1400
   let HTS1400ContractId: ContractId
@@ -123,8 +123,6 @@ describe('Contract', () => {
       let balanceAfter = await getHbarBalanceForId(HTS1400Contract.address)
       expect(+balanceAfter).to.eq(0)
     })
-    // it('Can update keys', async () => { // TODO
-    // })
   })
   describe('#Controller controlled functions', () => {
     describe('#HTS1643', () => {
