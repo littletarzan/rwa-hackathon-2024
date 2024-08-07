@@ -27,7 +27,7 @@ import Long from "long";
             .setAccountId(accountId)
             .execute(clientToUse);
 
-        // return await associate.getReceipt(clientToUse);
+        return await associate.getReceipt(clientToUse);
     }
 
     export async function dissociateToken(tokens: TokenId[], accountId: AccountId, clientToUse: Client) {
