@@ -4,7 +4,7 @@ import Web3 from 'web3'
 import { HTS1400ContractFixture } from "../../test/shared/fixture"
 
 async function main() {
-    let env = new EnvContainer(hardhat.network.name, './.env')
+    let env = new EnvContainer(hardhat.network.name)
     let web3 = new Web3()
 
     let hts1400 = await HTS1400ContractFixture(

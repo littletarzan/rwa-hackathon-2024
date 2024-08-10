@@ -6,7 +6,7 @@ import HTS1400JSON from '../../artifacts/contracts/HTS1400.sol/HTS1400.json'
 import Web3 from 'web3'
 
 async function main() {
-    let env = new EnvContainer(hardhat.network.name, './.env')
+    let env = new EnvContainer(hardhat.network.name)
     let web3 = new Web3()
     let HTS1400ContractId = env.HTS1400Contract
     if (!HTS1400ContractId) {

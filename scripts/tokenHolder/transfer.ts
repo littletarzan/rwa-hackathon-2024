@@ -6,7 +6,7 @@ import Web3 from 'web3'
 import { approveToken } from "../../utils/hederaUtils"
 
 async function main() {
-    let env = new EnvContainer(hardhat.network.name, './.env')
+    let env = new EnvContainer(hardhat.network.name)
 
     let HTS1400ContractId = env.HTS1400Contract
     if (!HTS1400ContractId) {
