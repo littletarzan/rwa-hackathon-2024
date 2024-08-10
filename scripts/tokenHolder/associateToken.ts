@@ -4,7 +4,7 @@ import hardhat from 'hardhat'
 import { associateToken } from "../../utils/hederaUtils"
 
 async function main() {
-    let env = new EnvContainer(hardhat.network.name, './.env')
+    let env = new EnvContainer(hardhat.network.name)
 
     let tokens: TokenId[] = [TokenId.fromString('0.0.1028')]
     let accountId: AccountId = env.aliceId

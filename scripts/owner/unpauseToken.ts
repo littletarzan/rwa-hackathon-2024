@@ -4,7 +4,7 @@ import { HTS1400 } from '../../typechain'
 import HTS1400JSON from '../../artifacts/contracts/HTS1400.sol/HTS1400.json'
 
 async function main() {
-    let env = new EnvContainer(hardhat.network.name, './.env')
+    let env = new EnvContainer(hardhat.network.name)
 
     let HTS1400ContractId = env.HTS1400Contract
     if (!HTS1400ContractId) {
