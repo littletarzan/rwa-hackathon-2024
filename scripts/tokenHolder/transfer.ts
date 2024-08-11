@@ -2,7 +2,6 @@ import EnvContainer from "../../EnvContainer"
 import hardhat, { hethers } from 'hardhat'
 import { HTS1400 } from '../../typechain'
 import HTS1400JSON from '../../artifacts/contracts/HTS1400.sol/HTS1400.json'
-import Web3 from 'web3'
 import { approveToken } from "../../utils/hederaUtils"
 
 async function main() {
