@@ -53,7 +53,7 @@ import { BigNumber } from 'ethers'
     )  
   }
   
-describe('Contract', () => {
+describe('HTS1400.sol', () => {
 
   before(async () => {
     env = new EnvContainer()
@@ -125,31 +125,29 @@ describe('Contract', () => {
     })
   })
   describe('#Controller controlled functions', () => {
-    describe('#HTS1643', () => {
-      it('Get, set, remove document', async () => {
-        const nameBytes = web3.utils.hexToBytes(web3.utils.padLeft(web3.utils.toHex('name1'), 64))
-        const uri = 'uri1'
-        const docHash = web3.utils.hexToBytes(web3.utils.keccak256('name1'))
-        await HTS1400Contract.connect(controllerSigner).setDocument(nameBytes, uri, docHash)
+    it('Get, set, remove document', async () => {
+      const nameBytes = web3.utils.hexToBytes(web3.utils.padLeft(web3.utils.toHex('name1'), 64))
+      const uri = 'uri1'
+      const docHash = web3.utils.hexToBytes(web3.utils.keccak256('name1'))
+      await HTS1400Contract.connect(controllerSigner).setDocument(nameBytes, uri, docHash)
 
-        let docInfo = await HTS1400Contract.getDocument(nameBytes)
-        expect(docInfo[0]).to.eq('uri1')
-        expect(docInfo[1]).to.eq(web3.utils.bytesToHex(docHash))
-        // docInfo[2] is timestamp, dont need to check accuracy
+      let docInfo = await HTS1400Contract.getDocument(nameBytes)
+      expect(docInfo[0]).to.eq('uri1')
+      expect(docInfo[1]).to.eq(web3.utils.bytesToHex(docHash))
+      // docInfo[2] is timestamp, dont need to check accuracy
 
-        let allDocs = await HTS1400Contract.getAllDocuments()
-        expect(allDocs.length).to.eq(1)
-        expect(allDocs[0]).to.eq(web3.utils.bytesToHex(nameBytes))
+      let allDocs = await HTS1400Contract.getAllDocuments()
+      expect(allDocs.length).to.eq(1)
+      expect(allDocs[0]).to.eq(web3.utils.bytesToHex(nameBytes))
 
-        await HTS1400Contract.connect(controllerSigner).removeDocument(nameBytes)
-        allDocs = await HTS1400Contract.getAllDocuments()
-        expect(allDocs.length).to.eq(0)
+      await HTS1400Contract.connect(controllerSigner).removeDocument(nameBytes)
+      allDocs = await HTS1400Contract.getAllDocuments()
+      expect(allDocs.length).to.eq(0)
 
-        docInfo = await HTS1400Contract.getDocument(nameBytes)
-        expect(docInfo[0]).to.eq('')
-        expect(docInfo[1]).to.eq(emptyBytes32Str)
-        expect(docInfo[2]).to.eq(BigNumber.from(0))
-      })
+      docInfo = await HTS1400Contract.getDocument(nameBytes)
+      expect(docInfo[0]).to.eq('')
+      expect(docInfo[1]).to.eq(emptyBytes32Str)
+      expect(docInfo[2]).to.eq(BigNumber.from(0))
     })
     it('Issue', async () => { 
       await associateToken([token], env.aliceId, env.aliceClient)
