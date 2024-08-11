@@ -19,7 +19,7 @@ async function main() {
     ) as unknown as HTS1400
 
     let gasLimit = 75_000
-    let evm_addr = env.bobPrivateKey.publicKey.toEthereumAddress();
+    let evm_addr = env.alicePrivateKey.publicKey.toEthereumAddress();
     let tx = await hts1400.connect(ownerSigner).ownerGrantTokenKyc(evm_addr, {gasLimit: gasLimit})
     let receipt = await tx.wait()
 
