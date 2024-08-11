@@ -137,7 +137,7 @@ contract HTS1400 is IHTS1400, Ownable, SafeHederaTokenService {
     function transferByPartition(bytes32 _partition, address _to, uint256 _value, bytes calldata _data) external returns (bytes32) {
         // Add a function to verify the `_data` parameter
         _transferByPartition(msg.sender, _to, _value, _partition, _data, msg.sender, "");
-        return _partition; // ?
+        return _partition;
     }
 
     function canTransferByPartition(address _from, address _to, bytes32 _partition, uint256 _value, bytes calldata _data) external view returns (bytes1, bytes32, bytes32) {
@@ -327,7 +327,6 @@ contract HTS1400 is IHTS1400, Ownable, SafeHederaTokenService {
     }
 
     // ERC1594
-
     /// @inheritdoc IHTS1594
     function transferWithData(address _to, uint256 _value, bytes calldata _data) external {
         // Add a function to validate the `_data` parameter

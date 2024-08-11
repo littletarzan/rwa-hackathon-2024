@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 
 /// @title IERC1643 Document Management (part of the ERC1400 Security Token Standards)
-/// @dev See https://github.com/SecurityTokenStandard/EIP-Spec
+/// @dev See https://github.com/SecurityTokenStandard/EIP-Spec/blob/master/contracts/ERC1643/IERC1643.sol
 
 interface IHTS1643 {
 
