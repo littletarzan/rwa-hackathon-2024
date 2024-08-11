@@ -6,7 +6,12 @@ import { associateToken } from "../../utils/hederaUtils"
 async function main() {
     let env = new EnvContainer(hardhat.network.name)
 
-    let tokens: TokenId[] = [TokenId.fromString('0.0.1028')]
+    let HTS1400Token = env.HTS1400Token
+    if (!HTS1400Token) {
+        throw new Error('HTS1400Token not set in EnvContainer.ts')
+    }
+
+    let tokens: TokenId[] = [HTS1400Token]
     let accountId: AccountId = env.aliceId
     let clientToUse: Client = env.aliceClient
 

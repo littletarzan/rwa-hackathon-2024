@@ -20,7 +20,7 @@ async function main() {
     ) as unknown as HTS1400
 
     let gasLimit = 35_000
-    let partition = web3.utils.padLeft(1, 64)
+    let partition = web3.utils.padLeft(0, 64)
     let tokenHolder = env.alicePrivateKey.publicKey.toEthereumAddress()
     let resp = await hts1400.connect(signer).balanceOfByPartition(partition, tokenHolder, {gasLimit: gasLimit})
     
